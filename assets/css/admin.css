@@ -1,0 +1,180 @@
+/**
+ * Stile delle schermate del plugin in wp-admin.
+ *
+ * Resta dentro il linguaggio visivo di WordPress: qui conta compilare
+ * in fretta, non l'estetica da archivio del frontend.
+ */
+
+/* --------------------------------------------------------------------
+   META BOX
+   -------------------------------------------------------------------- */
+
+.fsp-box__title {
+	margin: 0 0 4px;
+	font-size: 13px;
+	text-transform: uppercase;
+	letter-spacing: .08em;
+	color: #1d2327;
+}
+
+.fsp-box__hint {
+	margin: 0 0 14px;
+	color: #646970;
+	font-size: 12px;
+}
+
+.fsp-box__sep {
+	margin: 24px 0 18px;
+	border: 0;
+	border-top: 1px solid #dcdcde;
+}
+
+.fsp-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 6px 16px;
+}
+
+.fsp-grid__cell {
+	margin: 0 0 10px;
+}
+
+.fsp-label {
+	display: block;
+	margin-bottom: 4px;
+	font-weight: 600;
+	font-size: 12px;
+}
+
+/* --------------------------------------------------------------------
+   TABELLA ATTRIBUTI
+   -------------------------------------------------------------------- */
+
+.fsp-attributes {
+	margin-bottom: 10px;
+	border-collapse: collapse;
+}
+
+.fsp-attributes th {
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: .06em;
+}
+
+.fsp-attributes td {
+	vertical-align: middle;
+	padding: 6px 8px;
+}
+
+.fsp-attributes__handle {
+	width: 32px;
+	text-align: center;
+}
+
+.fsp-attributes__actions {
+	width: 40px;
+	text-align: center;
+}
+
+.fsp-attributes__grip {
+	color: #a7aaad;
+	cursor: grab;
+}
+
+.fsp-attributes__grip:active {
+	cursor: grabbing;
+}
+
+.fsp-attributes__row.is-dragging {
+	opacity: .5;
+	background: #f0f0f1;
+}
+
+.fsp-attributes__remove {
+	color: #b32d2e;
+	cursor: pointer;
+}
+
+.fsp-attributes__remove:hover {
+	color: #8a2424;
+}
+
+/*
+ * La riga modello vive dentro un <template>, che il browser non mostra
+ * mai: questa regola è una rete di sicurezza per il caso in cui il
+ * contenuto venga clonato ma non ancora inserito.
+ */
+template[data-fsp-attributes-template] {
+	display: none;
+}
+
+/* --------------------------------------------------------------------
+   GALLERIA
+   -------------------------------------------------------------------- */
+
+.fsp-gallery__list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin: 0 0 12px;
+	padding: 0;
+	list-style: none;
+}
+
+.fsp-gallery__item {
+	margin: 0;
+	border: 1px solid #dcdcde;
+	border-radius: 3px;
+	overflow: hidden;
+	line-height: 0;
+}
+
+.fsp-gallery__item img {
+	display: block;
+	width: 80px;
+	height: 80px;
+	object-fit: cover;
+}
+
+/* --------------------------------------------------------------------
+   SELETTORE IMMAGINE (meta box, impostazioni, sezioni)
+   -------------------------------------------------------------------- */
+
+.fsp-media__preview {
+	margin-bottom: 8px;
+	line-height: 0;
+}
+
+.fsp-media__preview img {
+	max-width: 260px;
+	height: auto;
+	border: 1px solid #dcdcde;
+	border-radius: 3px;
+}
+
+.fsp-media__remove {
+	margin-left: 10px;
+	color: #b32d2e;
+	cursor: pointer;
+}
+
+.fsp-media__remove[hidden] {
+	display: none;
+}
+
+/* --------------------------------------------------------------------
+   PAGINA IMPOSTAZIONI
+   -------------------------------------------------------------------- */
+
+.fsp-settings__link {
+	padding: 10px 14px;
+	background: #fff;
+	border-left: 4px solid #72aee6;
+	box-shadow: 0 1px 1px rgba(0, 0, 0, .04);
+}
+
+.fsp-settings__version {
+	margin-top: 30px;
+	color: #8c8f94;
+	font-size: 12px;
+}

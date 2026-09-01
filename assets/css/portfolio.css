@@ -1,0 +1,965 @@
+/**
+ * FrancyStore Portfolio — stile di frontend.
+ *
+ * Estetica da archivio tecnico: fondo quasi nero, testi in argento,
+ * monospaziato per i dati e condensato per i titoli, con velo,
+ * vignettatura e scanlines sopra le immagini di sfondo.
+ *
+ * Le pagine del portfolio non caricano header e footer del tema, quindi
+ * qui si parte davvero da zero: quello che non è dichiarato in questo
+ * file non esiste.
+ */
+
+:root {
+	--fsp-bg: #08090a;
+	--fsp-panel: #15171a;
+	--fsp-panel-soft: rgba(21, 23, 26, .82);
+	--fsp-silver: #d8dbde;
+	--fsp-silver-dim: #9aa0a6;
+	--fsp-line: rgba(216, 219, 222, .16);
+	--fsp-line-strong: rgba(216, 219, 222, .5);
+	--fsp-accent: #e8ebee;
+	--fsp-radius: 2px;
+}
+
+/*
+ * Il fondo scuro va messo anche su html e body: senza, sotto le nostre
+ * pagine resterebbe lo sfondo del tema, e Safari su iOS tinge le
+ * proprie barre campionando quel colore. Vedi anche il
+ * <meta name="theme-color"> nei template, che lo dichiara esplicitamente.
+ */
+html.fsp-html,
+body.fsp-body {
+	margin: 0;
+	padding: 0;
+	background: var(--fsp-bg);
+	color: var(--fsp-silver);
+	font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+	-webkit-font-smoothing: antialiased;
+}
+
+body.fsp-body * {
+	box-sizing: border-box;
+}
+
+body.fsp-body img {
+	max-width: 100%;
+	height: auto;
+}
+
+body.fsp-body a {
+	color: var(--fsp-silver);
+	text-decoration: none;
+}
+
+body.fsp-body a:hover {
+	color: #fff;
+}
+
+/* Blocca lo scorrimento della pagina mentre una foto è ingrandita. */
+body.fsp-no-scroll {
+	overflow: hidden;
+}
+
+.fsp-display {
+	font-family: 'Saira Condensed', 'Arial Narrow', sans-serif;
+	letter-spacing: .04em;
+}
+
+/* Riga sottile di separazione, usata sotto le intestazioni. */
+.fsp-rule {
+	height: 1px;
+	margin: 18px auto;
+	max-width: 640px;
+	background: linear-gradient(90deg, transparent, var(--fsp-line-strong), transparent);
+}
+
+/*
+ * Righe orizzontali finissime sopra a tutto, come un vecchio monitor.
+ * pointer-events:none è indispensabile: il livello copre l'intera
+ * pagina e senza intercetterebbe ogni click destinato alle schede.
+ */
+.fsp-scanlines {
+	position: fixed;
+	inset: 0;
+	z-index: 3;
+	pointer-events: none;
+	opacity: .35;
+	background: repeating-linear-gradient(180deg, rgba(255, 255, 255, .045) 0 1px, transparent 1px 3px);
+}
+
+/* --------------------------------------------------------------------
+   BARRA DI NAVIGAZIONE
+   -------------------------------------------------------------------- */
+
+.fsp-topbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	margin-top: 18px;
+}
+
+.fsp-topbar__link {
+	display: inline-block;
+	padding: 10px 20px;
+	background: rgba(14, 16, 18, .9);
+	border: 1px solid var(--fsp-line-strong);
+	border-radius: var(--fsp-radius);
+	font-size: 11px;
+	letter-spacing: .18em;
+	text-transform: uppercase;
+	white-space: nowrap;
+	transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.fsp-topbar__link:hover,
+.fsp-topbar__link:focus-visible {
+	background: rgba(216, 219, 222, .1);
+	border-color: rgba(216, 219, 222, .85);
+	color: #fff;
+}
+
+/* --------------------------------------------------------------------
+   ARCHIVIO — sfondo e intestazione
+   -------------------------------------------------------------------- */
+
+.fsp-archive {
+	position: relative;
+	min-height: 100vh;
+	overflow: hidden;
+	background: var(--fsp-bg);
+}
+
+/*
+ * Lo sfondo è ancorato in alto e mantiene la propria dimensione: su
+ * monitor larghi si vede per intero, su schermi stretti viene tagliato
+ * a destra invece di rimpicciolirsi. La sfumatura verso il basso lo
+ * raccorda al fondo pagina.
+ */
+.fsp-archive__bg {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 0;
+	overflow: hidden;
+	line-height: 0;
+	max-height: 90vh;
+}
+
+.fsp-archive__bg img {
+	display: block;
+	width: 100%;
+	height: auto;
+	object-fit: cover;
+	/* Transizione usata dal cambio sfondo quando si filtra per sezione. */
+	transition: opacity .5s ease;
+}
+
+/*
+ * Durante il cambio le due immagini stanno una sopra l'altra: la nuova
+ * entra da trasparente, la vecchia esce. Solo la prima resta nel flusso,
+ * altrimenti il contenitore raddoppierebbe di altezza a ogni scambio.
+ */
+.fsp-archive__bg img + img {
+	position: absolute;
+	top: 0;
+	left: 0;
+}
+
+.fsp-archive__bg-image--in {
+	opacity: 0;
+}
+
+.fsp-archive__bg-image--out {
+	opacity: 0;
+}
+
+.fsp-archive__overlay {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	pointer-events: none;
+	background: linear-gradient(180deg, rgba(8, 9, 10, .74) 0%, rgba(8, 9, 10, .5) 32%, var(--fsp-bg) 92%);
+}
+
+.fsp-archive__inner {
+	position: relative;
+	z-index: 2;
+	max-width: 1280px;
+	margin: 0 auto;
+	padding: 54px 24px 100px;
+}
+
+.fsp-archive__header {
+	text-align: center;
+	margin-bottom: 34px;
+}
+
+.fsp-archive__title {
+	margin: 0;
+	font-size: clamp(30px, 6vw, 60px);
+	font-weight: 600;
+	letter-spacing: .12em;
+	text-transform: uppercase;
+	color: #fff;
+}
+
+.fsp-archive__subtitle {
+	margin-top: 10px;
+	font-size: 13px;
+	letter-spacing: .3em;
+	color: var(--fsp-silver-dim);
+}
+
+.fsp-archive__tag {
+	margin-top: 14px;
+	font-size: 10px;
+	letter-spacing: .34em;
+	text-transform: uppercase;
+	color: var(--fsp-silver-dim);
+}
+
+/* --------------------------------------------------------------------
+   ARCHIVIO — barra dei filtri
+   -------------------------------------------------------------------- */
+
+.fsp-filters {
+	margin: 0 auto 38px;
+	padding: 20px 22px;
+	max-width: 1000px;
+	background: var(--fsp-panel-soft);
+	border: 1px solid var(--fsp-line);
+	border-radius: var(--fsp-radius);
+	backdrop-filter: blur(6px);
+}
+
+.fsp-filters__group + .fsp-filters__group {
+	margin-top: 18px;
+	padding-top: 18px;
+	border-top: 1px solid var(--fsp-line);
+}
+
+.fsp-filters__legend {
+	margin-bottom: 10px;
+	font-size: 10px;
+	letter-spacing: .3em;
+	text-transform: uppercase;
+	color: var(--fsp-silver-dim);
+}
+
+.fsp-filters__chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.fsp-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 14px;
+	background: transparent;
+	border: 1px solid var(--fsp-line);
+	border-radius: var(--fsp-radius);
+	color: var(--fsp-silver-dim);
+	font-family: inherit;
+	font-size: 12px;
+	letter-spacing: .08em;
+	cursor: pointer;
+	transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.fsp-chip:hover {
+	border-color: var(--fsp-line-strong);
+	color: var(--fsp-silver);
+}
+
+.fsp-chip.is-active {
+	background: rgba(216, 219, 222, .12);
+	border-color: rgba(216, 219, 222, .85);
+	color: #fff;
+}
+
+.fsp-chip--tag {
+	font-size: 11px;
+	text-transform: lowercase;
+}
+
+.fsp-chip__count {
+	font-size: 10px;
+	opacity: .6;
+}
+
+.fsp-filters__bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-top: 18px;
+	padding-top: 14px;
+	border-top: 1px solid var(--fsp-line);
+	font-size: 11px;
+	letter-spacing: .18em;
+	text-transform: uppercase;
+	color: var(--fsp-silver-dim);
+}
+
+.fsp-filters__reset {
+	padding: 6px 12px;
+	background: transparent;
+	border: 1px solid var(--fsp-line);
+	border-radius: var(--fsp-radius);
+	color: var(--fsp-silver-dim);
+	font-family: inherit;
+	font-size: 10px;
+	letter-spacing: .18em;
+	text-transform: uppercase;
+	cursor: pointer;
+}
+
+.fsp-filters__reset:hover {
+	border-color: var(--fsp-line-strong);
+	color: #fff;
+}
+
+/* --------------------------------------------------------------------
+   ARCHIVIO — griglia e schede
+   -------------------------------------------------------------------- */
+
+.fsp-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+	gap: 20px;
+}
+
+.fsp-card {
+	position: relative;
+	background: var(--fsp-panel);
+	border: 1px solid var(--fsp-line);
+	border-radius: var(--fsp-radius);
+	overflow: hidden;
+	/* Il riordino anima transform via JS: qui si dichiara solo
+	   l'aspetto, la transizione la imposta lo script per non farla
+	   scattare anche sull'hover. */
+	will-change: transform;
+}
+
+.fsp-card:hover {
+	border-color: var(--fsp-line-strong);
+}
+
+/*
+ * Le schede escluse dai filtri si nascondono con l'attributo hidden. La
+ * regola è esplicita e con !important perché basta un reset che dichiari
+ * un display su questi elementi per battere il comportamento di default
+ * di [hidden], lasciando in griglia schede che dovevano sparire.
+ */
+.fsp-card[hidden] {
+	display: none !important;
+}
+
+.fsp-card__link {
+	display: block;
+	height: 100%;
+}
+
+.fsp-card__media {
+	position: relative;
+	aspect-ratio: 4 / 5;
+	overflow: hidden;
+	background: #0d0f11;
+}
+
+.fsp-card__media img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	/* Le foto partono desaturate e riprendono colore al passaggio del
+	   mouse: tiene la griglia coerente anche con scatti fatti in
+	   condizioni di luce diverse. */
+	filter: grayscale(.55) contrast(1.05);
+	transition: transform .5s ease, filter .4s ease;
+}
+
+.fsp-card:hover .fsp-card__media img {
+	transform: scale(1.05);
+	filter: grayscale(0) contrast(1);
+}
+
+.fsp-card__placeholder {
+	width: 100%;
+	height: 100%;
+	background: repeating-linear-gradient(45deg, #0d0f11 0 10px, #101315 10px 20px);
+}
+
+/* Angoli a squadra, come le mire di una scheda tecnica. */
+.fsp-card__corner {
+	position: absolute;
+	width: 12px;
+	height: 12px;
+	border: 1px solid rgba(216, 219, 222, .55);
+	z-index: 2;
+	pointer-events: none;
+}
+
+.fsp-card__corner--tl { top: 8px; left: 8px; border-right: 0; border-bottom: 0; }
+.fsp-card__corner--tr { top: 8px; right: 8px; border-left: 0; border-bottom: 0; }
+.fsp-card__corner--bl { bottom: 8px; left: 8px; border-right: 0; border-top: 0; }
+.fsp-card__corner--br { bottom: 8px; right: 8px; border-left: 0; border-top: 0; }
+
+.fsp-card__body {
+	padding: 14px 16px 18px;
+	border-top: 1px solid var(--fsp-line);
+}
+
+.fsp-card__code {
+	font-size: 10px;
+	letter-spacing: .24em;
+	color: var(--fsp-silver-dim);
+}
+
+.fsp-card__title {
+	margin: 6px 0 0;
+	font-size: 19px;
+	font-weight: 600;
+	line-height: 1.2;
+	text-transform: uppercase;
+	color: #fff;
+}
+
+.fsp-card__section {
+	margin-top: 8px;
+	font-size: 10px;
+	letter-spacing: .22em;
+	text-transform: uppercase;
+	color: var(--fsp-silver-dim);
+}
+
+/* Entrata di una scheda che rientra nel filtro. */
+@keyframes fsp-card-in {
+	from { opacity: 0; transform: scale(.94); }
+	to   { opacity: 1; transform: none; }
+}
+
+.fsp-card--in {
+	animation: fsp-card-in .38s cubic-bezier(.22, .61, .36, 1) both;
+}
+
+.fsp-empty {
+	margin: 60px 0;
+	text-align: center;
+	font-size: 12px;
+	letter-spacing: .2em;
+	text-transform: uppercase;
+	color: var(--fsp-silver-dim);
+}
+
+/* --------------------------------------------------------------------
+   SCHEDA SINGOLA
+   -------------------------------------------------------------------- */
+
+.fsp-single {
+	position: relative;
+	min-height: 100vh;
+	overflow: hidden;
+	background: var(--fsp-bg);
+	padding-bottom: 80px;
+}
+
+/*
+ * position:absolute e non fixed: un tema o un plugin che applica
+ * transform/filter/contain a un antenato riaggancerebbe un position:
+ * fixed a quell'elemento invece che al viewport, spostando lo sfondo.
+ */
+.fsp-single__bg {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 0;
+	max-height: 100vh;
+	overflow: hidden;
+	line-height: 0;
+}
+
+.fsp-single__bg img {
+	width: 100%;
+	height: auto;
+	object-fit: cover;
+}
+
+.fsp-single__overlay {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+	background: linear-gradient(180deg, rgba(8, 9, 10, .72) 0%, rgba(8, 9, 10, .45) 30%, var(--fsp-bg) 88%);
+}
+
+/*
+ * Vignettatura in percentuale e non in pixel: con misure fisse la
+ * fascia scura occuperebbe metà larghezza su un telefono e un decimo su
+ * un monitor, facendo sparire l'immagine sul primo.
+ */
+.fsp-single__vignette {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+	background: radial-gradient(ellipse 80% 70% at 50% 38%, transparent 0%, rgba(0, 0, 0, .25) 55%, rgba(0, 0, 0, .75) 100%);
+}
+
+.fsp-single__inner {
+	position: relative;
+	z-index: 2;
+	max-width: 1180px;
+	margin: 0 auto;
+	padding: 28px 24px 0;
+}
+
+.fsp-single__header {
+	margin: 28px 0 32px;
+	text-align: center;
+}
+
+.fsp-single__title {
+	margin: 0;
+	font-size: clamp(28px, 5vw, 52px);
+	font-weight: 600;
+	line-height: 1.1;
+	text-transform: uppercase;
+	color: #fff;
+}
+
+.fsp-single__code {
+	margin-top: 10px;
+	font-size: 11px;
+	letter-spacing: .3em;
+	color: var(--fsp-silver-dim);
+}
+
+/*
+ * Immagine a sinistra, dati a destra. Su schermi stretti le due colonne
+ * si impilano: la foto resta sopra, che è quello che si vuole vedere per
+ * primo su un telefono.
+ */
+.fsp-single__cols {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 26px;
+	align-items: start;
+}
+
+@media (min-width: 900px) {
+	.fsp-single__cols {
+		grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr);
+		gap: 32px;
+	}
+}
+
+.fsp-single__media {
+	position: relative;
+	margin: 0;
+	background: var(--fsp-panel);
+	border: 1px solid var(--fsp-line);
+	border-radius: var(--fsp-radius);
+	overflow: hidden;
+}
+
+.fsp-single__zoom {
+	display: block;
+	width: 100%;
+	padding: 0;
+	border: 0;
+	background: none;
+	cursor: zoom-in;
+}
+
+.fsp-single__zoom img {
+	display: block;
+	width: 100%;
+	height: auto;
+}
+
+.fsp-single__gallery {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+	gap: 8px;
+	margin: 12px 0 0;
+	padding: 0;
+	list-style: none;
+}
+
+.fsp-single__gallery-btn {
+	display: block;
+	width: 100%;
+	padding: 0;
+	border: 1px solid var(--fsp-line);
+	border-radius: var(--fsp-radius);
+	background: var(--fsp-panel);
+	cursor: zoom-in;
+	overflow: hidden;
+	transition: border-color .15s ease;
+}
+
+.fsp-single__gallery-btn:hover {
+	border-color: var(--fsp-line-strong);
+}
+
+.fsp-single__gallery-btn img {
+	display: block;
+	width: 100%;
+	aspect-ratio: 1;
+	object-fit: cover;
+}
+
+/* --------------------------------------------------------------------
+   PANNELLO DATI
+   -------------------------------------------------------------------- */
+
+.fsp-panel {
+	position: relative;
+	padding: 24px 22px;
+	background: var(--fsp-panel-soft);
+	border: 1px solid var(--fsp-line-strong);
+	border-radius: var(--fsp-radius);
+	backdrop-filter: blur(6px);
+}
+
+/* Quattro viti agli angoli: dettaglio da targa avvitata sul pannello. */
+.fsp-panel__screw {
+	position: absolute;
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: rgba(216, 219, 222, .35);
+}
+
+.fsp-panel__screw--tl { top: 8px; left: 8px; }
+.fsp-panel__screw--tr { top: 8px; right: 8px; }
+.fsp-panel__screw--bl { bottom: 8px; left: 8px; }
+.fsp-panel__screw--br { bottom: 8px; right: 8px; }
+
+.fsp-panel__heading {
+	margin: 0;
+	font-size: 11px;
+	font-weight: 400;
+	letter-spacing: .28em;
+	text-transform: uppercase;
+	color: var(--fsp-silver-dim);
+}
+
+.fsp-panel__rule {
+	height: 1px;
+	margin: 14px 0;
+	background: var(--fsp-line);
+}
+
+.fsp-panel__specs {
+	margin: 0;
+}
+
+.fsp-panel__spec {
+	display: grid;
+	grid-template-columns: minmax(96px, 38%) 1fr;
+	gap: 10px;
+	padding: 7px 0;
+	border-bottom: 1px dashed rgba(216, 219, 222, .1);
+	font-size: 13px;
+}
+
+.fsp-panel__spec:last-child {
+	border-bottom: 0;
+}
+
+.fsp-panel__spec dt {
+	font-size: 10px;
+	letter-spacing: .16em;
+	text-transform: uppercase;
+	color: var(--fsp-silver-dim);
+	padding-top: 2px;
+}
+
+.fsp-panel__spec dd {
+	margin: 0;
+	color: var(--fsp-silver);
+}
+
+.fsp-panel__empty {
+	margin: 0;
+	font-size: 12px;
+	color: var(--fsp-silver-dim);
+}
+
+.fsp-panel__terms {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.fsp-term {
+	display: inline-block;
+	padding: 5px 10px;
+	border: 1px solid var(--fsp-line);
+	border-radius: var(--fsp-radius);
+	font-size: 10px;
+	letter-spacing: .14em;
+	text-transform: uppercase;
+	color: var(--fsp-silver-dim);
+	transition: border-color .15s ease, color .15s ease;
+}
+
+.fsp-term:hover {
+	border-color: var(--fsp-line-strong);
+	color: #fff;
+}
+
+.fsp-term--section {
+	border-color: rgba(216, 219, 222, .4);
+	color: var(--fsp-silver);
+}
+
+/* --------------------------------------------------------------------
+   CONTATTO
+   -------------------------------------------------------------------- */
+
+.fsp-contact__title {
+	margin-bottom: 12px;
+	font-size: 11px;
+	letter-spacing: .2em;
+	text-transform: uppercase;
+	color: var(--fsp-silver-dim);
+}
+
+.fsp-contact__btn {
+	display: block;
+	width: 100%;
+	padding: 13px 16px;
+	margin-bottom: 8px;
+	background: rgba(216, 219, 222, .1);
+	border: 1px solid rgba(216, 219, 222, .6);
+	border-radius: var(--fsp-radius);
+	font-size: 12px;
+	letter-spacing: .16em;
+	text-transform: uppercase;
+	text-align: center;
+	transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.fsp-contact__btn:hover {
+	background: rgba(216, 219, 222, .2);
+	border-color: #fff;
+	color: #fff;
+}
+
+.fsp-contact__btn--wa {
+	background: rgba(37, 211, 102, .12);
+	border-color: rgba(37, 211, 102, .55);
+}
+
+.fsp-contact__btn--wa:hover {
+	background: rgba(37, 211, 102, .22);
+	border-color: rgba(37, 211, 102, .9);
+}
+
+.fsp-contact__hint {
+	margin: 10px 0 0;
+	font-size: 11px;
+	line-height: 1.6;
+	color: var(--fsp-silver-dim);
+}
+
+.fsp-contact__hint strong {
+	color: var(--fsp-silver);
+	font-weight: 500;
+}
+
+/* --------------------------------------------------------------------
+   NOTE DI LAVORAZIONE
+   -------------------------------------------------------------------- */
+
+.fsp-note {
+	margin: 36px 0 0;
+	padding: 24px 26px;
+	background: rgba(13, 15, 17, .8);
+	border: 1px solid var(--fsp-line);
+	border-radius: var(--fsp-radius);
+}
+
+.fsp-note__head {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	margin-bottom: 16px;
+	font-size: 10px;
+	letter-spacing: .26em;
+	text-transform: uppercase;
+	color: var(--fsp-silver-dim);
+	white-space: nowrap;
+}
+
+.fsp-note__rule {
+	flex: 1;
+	height: 1px;
+	background: var(--fsp-line);
+}
+
+.fsp-note__text {
+	font-size: 14px;
+	line-height: 1.8;
+	color: var(--fsp-silver);
+}
+
+.fsp-note__text p:first-child { margin-top: 0; }
+.fsp-note__text p:last-child { margin-bottom: 0; }
+
+/* --------------------------------------------------------------------
+   PEZZO PRECEDENTE / SUCCESSIVO
+   -------------------------------------------------------------------- */
+
+.fsp-pager {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 10px;
+	margin-top: 30px;
+}
+
+@media (min-width: 700px) {
+	.fsp-pager {
+		grid-template-columns: 1fr 1fr;
+	}
+}
+
+.fsp-pager__link {
+	display: block;
+	padding: 16px 18px;
+	background: rgba(13, 15, 17, .8);
+	border: 1px solid var(--fsp-line);
+	border-radius: var(--fsp-radius);
+	transition: border-color .15s ease;
+}
+
+.fsp-pager__link:hover {
+	border-color: var(--fsp-line-strong);
+}
+
+.fsp-pager__link--next {
+	text-align: right;
+}
+
+.fsp-pager__dir {
+	display: block;
+	font-size: 10px;
+	letter-spacing: .2em;
+	text-transform: uppercase;
+	color: var(--fsp-silver-dim);
+}
+
+.fsp-pager__title {
+	display: block;
+	margin-top: 6px;
+	font-family: 'Saira Condensed', 'Arial Narrow', sans-serif;
+	font-size: 17px;
+	text-transform: uppercase;
+	color: var(--fsp-silver);
+}
+
+/* --------------------------------------------------------------------
+   INGRANDIMENTO FOTO
+   -------------------------------------------------------------------- */
+
+.fsp-lightbox {
+	position: fixed;
+	inset: 0;
+	z-index: 100;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 40px 20px;
+	background: rgba(4, 5, 6, .94);
+	cursor: zoom-out;
+}
+
+.fsp-lightbox[hidden] {
+	display: none;
+}
+
+.fsp-lightbox img {
+	max-width: 100%;
+	max-height: 100%;
+	object-fit: contain;
+	cursor: default;
+}
+
+.fsp-lightbox__close {
+	position: absolute;
+	top: 16px;
+	right: 20px;
+	width: 42px;
+	height: 42px;
+	background: transparent;
+	border: 1px solid var(--fsp-line);
+	border-radius: var(--fsp-radius);
+	color: var(--fsp-silver);
+	font-size: 26px;
+	line-height: 1;
+	cursor: pointer;
+}
+
+.fsp-lightbox__close:hover {
+	border-color: #fff;
+	color: #fff;
+}
+
+/* --------------------------------------------------------------------
+   SCHERMI STRETTI
+   -------------------------------------------------------------------- */
+
+@media (max-width: 700px) {
+	.fsp-archive__inner {
+		padding: 34px 16px 70px;
+	}
+
+	.fsp-single__inner {
+		padding: 20px 16px 0;
+	}
+
+	.fsp-filters {
+		padding: 16px;
+	}
+
+	.fsp-grid {
+		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+		gap: 12px;
+	}
+
+	.fsp-card__title {
+		font-size: 15px;
+	}
+
+	/* Su una colonna sola le etichette vanno sopra al valore: due
+	   colonne in 320px lascerebbero ai valori lunghi tre caratteri per
+	   riga. */
+	.fsp-panel__spec {
+		grid-template-columns: 1fr;
+		gap: 3px;
+	}
+}
+
+/*
+ * Chi ha chiesto meno animazioni al sistema operativo le vede sparire
+ * tutte: il JS salta già il riordino animato, qui si azzerano anche
+ * transizioni e keyframe dichiarati in CSS.
+ */
+@media (prefers-reduced-motion: reduce) {
+	body.fsp-body *,
+	body.fsp-body *::before,
+	body.fsp-body *::after {
+		animation-duration: .01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: .01ms !important;
+	}
+}
