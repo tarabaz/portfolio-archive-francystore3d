@@ -52,6 +52,7 @@ class FSP_Settings {
 			'smoke_speed'            => 40,
 			'smoke_size'             => 55,
 			'logo_opacity'           => 100,
+			'logo_glow'              => 45,
 			'instagram_handle'       => '',
 			'whatsapp_number'        => '',
 			'attribute_suggestions'  => "Alimentazione\nTipo illuminazione\nScala\nBase inclusa\nVerniciatura\nPeso\nPersonalizzabile",
@@ -203,6 +204,10 @@ class FSP_Settings {
 			'logo_opacity'    => array(
 				'label' => __( 'Opacità del logo', 'francystore-portfolio' ),
 				'help'  => __( 'Abbassandola il logo si fonde di più con il fumo, come se fosse dentro la nebbia invece che davanti.', 'francystore-portfolio' ),
+			),
+			'logo_glow'       => array(
+				'label' => __( 'Bagliore del logo', 'francystore-portfolio' ),
+				'help'  => __( 'Alone luminoso attorno alle forme del logo, del colore del fumo. Rende al meglio con un logo di un colore solo e chiaro su sfondo trasparente: su un logo con parti scure l\'alone si vede poco, perché segue i contorni di ciò che è già illuminato. A 0 è spento.', 'francystore-portfolio' ),
 			),
 		);
 	}

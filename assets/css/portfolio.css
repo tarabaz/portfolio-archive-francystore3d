@@ -382,6 +382,18 @@ body.fsp-no-scroll {
 	min-height: 260px;
 	transform: translate(-50%, -50%);
 	z-index: 2;
+	/*
+	 * Somma di luce con quello che ha sotto, logo compreso: è
+	 * l'AdditiveBlending del pen originale. Senza, questo livello è una
+	 * velina grigia appoggiata sopra e dove passa sporca il logo invece
+	 * di accenderlo — la differenza fra "immagine con della nebbia
+	 * sopra" e "oggetto dentro la nebbia".
+	 *
+	 * "screen" e non "plus-lighter": su un fondo scuro il risultato è
+	 * praticamente lo stesso, ma è supportato da anni su tutti i browser
+	 * mentre plus-lighter è arrivato di recente.
+	 */
+	mix-blend-mode: screen;
 	-webkit-mask-image: radial-gradient(ellipse 46% 46% at 50% 50%, #000 20%, transparent 100%);
 	mask-image: radial-gradient(ellipse 46% 46% at 50% 50%, #000 20%, transparent 100%);
 }
@@ -410,6 +422,26 @@ body.fsp-no-scroll {
 	position: relative;
 	z-index: 1;
 	opacity: var(--fsp-logo-opacity, 1);
+}
+
+/*
+ * Bagliore attorno al logo.
+ *
+ * drop-shadow e non box-shadow: la seconda disegnerebbe l'alone attorno
+ * al rettangolo dell'immagine, questa lo segue lungo i contorni veri
+ * delle forme, rispettando la trasparenza del PNG.
+ *
+ * Tre ombre sovrapposte a raggio crescente invece di una sola: un alone
+ * unico e largo risulta piatto e slavato, tre danno un nucleo denso
+ * vicino alle lettere che si dirada allontanandosi, che è come si
+ * comporta la luce vera.
+ */
+.fsp-brand--smoke .fsp-archive__logo img,
+.fsp-brand--smoke .fsp-archive__title {
+	filter:
+		drop-shadow(0 0 calc(var(--fsp-logo-glow, 0px) * .35) var(--fsp-glow-color, #8fb6c8))
+		drop-shadow(0 0 var(--fsp-logo-glow, 0px) var(--fsp-glow-color, #8fb6c8))
+		drop-shadow(0 0 calc(var(--fsp-logo-glow, 0px) * 2.2) var(--fsp-glow-color, #8fb6c8));
 }
 
 /*

@@ -146,6 +146,20 @@ foto per tutta la navigazione. Il logo resta un'immagine vera in pagina: scorre
 per conto suo, resta nitido, e la sua opacità è una variabile CSS dalle
 impostazioni.
 
+**Il livello di fumo davanti ha `mix-blend-mode: screen`**, cioè
+l'`AdditiveBlending` del pen: dove passa sul logo lo accende invece di sporcarlo
+di grigio. Senza, era una velina appoggiata sopra — ed è il motivo per cui prima
+avevo dovuto abbassare l'opacità delle volute davanti, compensando il sintomo
+invece della causa. `screen` e non `plus-lighter`: su fondo scuro la resa è la
+stessa ed è supportato da anni ovunque.
+
+**Il bagliore del logo usa `drop-shadow` e non `box-shadow`**: la seconda
+disegnerebbe l'alone attorno al rettangolo dell'immagine, la prima segue i
+contorni veri delle forme rispettando la trasparenza del PNG. Tre ombre a raggio
+crescente invece di una larga: una sola risulta piatta, tre danno un nucleo denso
+che si dirada, come fa la luce vera. Rende al meglio con un logo monocromatico
+chiaro su trasparente — su parti scure l'alone quasi non si vede.
+
 **Le manopole del fumo sono tutte 0-100** e la traduzione nelle unità vere
 (numero di volute, secondi, pixel) sta in un punto solo, `smokeParams()` nel JS.
 Verificato che cambiano davvero la resa: da intensità 10/opacità 20 a 95/90 la

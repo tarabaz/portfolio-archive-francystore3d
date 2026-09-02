@@ -30,6 +30,7 @@ $fsp_logo_url    = $fsp_logo_id ? wp_get_attachment_image_url( $fsp_logo_id, 'fu
 $fsp_logo_smoke    = FSP_Settings::logo_in_smoke();
 $fsp_smoke_color   = FSP_Settings::get_smoke_color();
 $fsp_logo_opacity  = FSP_Settings::get_smoke_value( 'logo_opacity' );
+$fsp_logo_glow     = FSP_Settings::get_smoke_value( 'logo_glow' );
 
 // Le manopole arrivano al JavaScript come un unico attributo JSON: sono
 // tutte dello stesso tipo e servono tutte insieme, un attributo per
@@ -206,7 +207,7 @@ if ( is_tax( FSP_Taxonomies::SECTION ) ) {
 			?>
 			<div class="fsp-brand<?php echo $fsp_logo_smoke ? ' fsp-brand--smoke' : ''; ?>"
 				data-fsp-brand
-				style="--fsp-logo-opacity: <?php echo esc_attr( (string) ( $fsp_logo_opacity / 100 ) ); ?>">
+				style="--fsp-logo-opacity: <?php echo esc_attr( (string) ( $fsp_logo_opacity / 100 ) ); ?>; --fsp-logo-glow: <?php echo esc_attr( (string) round( $fsp_logo_glow * .32, 2 ) ); ?>px; --fsp-glow-color: <?php echo esc_attr( $fsp_smoke_color ); ?>">
 				<?php if ( $fsp_logo_smoke ) : ?>
 					<div class="fsp-brand-smoke fsp-brand-smoke--front" data-fsp-brand-smoke="front" aria-hidden="true"></div>
 				<?php endif; ?>
