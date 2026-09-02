@@ -211,8 +211,29 @@ body.fsp-no-scroll {
 		position: absolute;
 	}
 
-	.fsp-no-effect-mobile .fsp-smoke {
+	.fsp-no-effect-mobile .fsp-smoke,
+	.fsp-no-effect-mobile .fsp-brand-smoke {
 		display: none;
+	}
+
+	/*
+	 * Con l'effetto spento su telefono il marchio torna com'era, senza
+	 * alone e a piena opacità.
+	 *
+	 * Bagliore e opacità ridotta esistono per fondere il logo con il
+	 * fumo: sono il ripiego che tiene l'aspetto quando il canvas non
+	 * parte, ma qui il canvas non deve partire per scelta. Senza fumo
+	 * dietro, quell'alone resta appiccicato al logo senza motivo — ed è
+	 * proprio quello che si vedeva.
+	 */
+	.fsp-no-effect-mobile .fsp-brand--smoke .fsp-archive__logo img,
+	.fsp-no-effect-mobile .fsp-brand--smoke .fsp-archive__title {
+		filter: none;
+	}
+
+	.fsp-no-effect-mobile .fsp-brand--smoke .fsp-archive__logo,
+	.fsp-no-effect-mobile .fsp-brand--smoke .fsp-archive__title {
+		opacity: 1;
 	}
 }
 

@@ -148,6 +148,12 @@ nello stesso spazio. Oltre quella distanza è invisibile e non viene più disegn
 Essendo funzione della posizione di scorrimento e non un'animazione a senso unico,
 tornando in cima ripercorre tutto al contrario da sé.
 
+**Con l'effetto spento su telefono va tolto anche il ripiego CSS** (bagliore e
+opacità ridotta sul logo), non solo il canvas. Quei due esistono per fondere il
+logo col fumo: senza fumo dietro restano un alone appiccicato al logo senza
+motivo — ed è esattamente il difetto che si vedeva disattivando l'effetto da
+mobile.
+
 **Il fumo non svanisce mai: solo il marchio.** La dissolvenza tocca l'opacità con
 cui si disegna il logo, non il canvas.
 
