@@ -134,6 +134,20 @@ if ( is_tax( FSP_Taxonomies::SECTION ) ) {
 	<?php // Il canvas del fumo lo crea il JavaScript qui dentro, se l'effetto è attivo. ?>
 	<div class="fsp-smoke" data-fsp-smoke aria-hidden="true"></div>
 
+	<?php
+	/*
+	 * Livello del fumo dell'intestazione: sta qui, fuori dal contenuto, e
+	 * non dentro al blocco del logo. Dentro sarebbe largo quanto la
+	 * colonna di testo e, per avere aria attorno al marchio, avrebbe
+	 * bisogno di margini veri — che spingono in basso tutto il resto
+	 * della pagina. Da qui invece si sovrappone al layout senza farne
+	 * parte: accendere o spegnere l'effetto non muove nulla di un pixel.
+	 */
+	?>
+	<?php if ( $fsp_logo_smoke ) : ?>
+		<div class="fsp-brand-smoke" data-fsp-brand-smoke aria-hidden="true"></div>
+	<?php endif; ?>
+
 	<div class="fsp-archive__overlay" aria-hidden="true"></div>
 	<div class="fsp-scanlines" aria-hidden="true"></div>
 
@@ -165,8 +179,7 @@ if ( is_tax( FSP_Taxonomies::SECTION ) ) {
 			 * attesa di qualcosa.
 			 */
 			?>
-			<div class="fsp-brand<?php echo $fsp_logo_smoke ? ' fsp-brand--smoke' : ''; ?>"
-				<?php if ( $fsp_logo_smoke ) : ?>data-fsp-brand-smoke<?php endif; ?>>
+			<div class="fsp-brand<?php echo $fsp_logo_smoke ? ' fsp-brand--smoke' : ''; ?>" data-fsp-brand>
 				<?php if ( $fsp_logo_url ) : ?>
 					<h1 class="fsp-archive__logo" style="--fsp-logo-height: <?php echo esc_attr( (string) $fsp_logo_height ); ?>px">
 						<img src="<?php echo esc_url( $fsp_logo_url ); ?>"

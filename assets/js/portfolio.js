@@ -932,8 +932,14 @@
 			return;
 		}
 
-		var image = host.querySelector( '[data-fsp-brand-image]' );
-		var textEl = host.querySelector( '[data-fsp-brand-text]' );
+		var brand = document.querySelector( '[data-fsp-brand]' );
+
+		if ( ! brand ) {
+			return;
+		}
+
+		var image = brand.querySelector( '[data-fsp-brand-image]' );
+		var textEl = brand.querySelector( '[data-fsp-brand-text]' );
 
 		if ( ! image && ! textEl ) {
 			return;
@@ -969,6 +975,13 @@
 		var lastFrame = 0;
 		var textStyle = null;
 
+		// Dove cade il centro del marchio dentro al canvas. Il livello del
+		// fumo è ancorato in cima alla pagina e il marchio sta più in
+		// basso: senza questo scarto il logo verrebbe disegnato in
+		// corrispondenza del bordo superiore invece che al posto suo.
+		var brandX = 0;
+		var brandY = 0;
+
 		if ( textEl ) {
 			var computed = window.getComputedStyle( textEl );
 
@@ -995,13 +1008,41 @@
 
 			ctx.setTransform( ratio, 0, 0, ratio, 0, 0 );
 
+			measureBrand();
+
 			return true;
+		}
+
+		/**
+		 * Misura dove sta il marchio rispetto al livello del fumo.
+		 *
+		 * Si misura l'elemento vero invece di calcolare a mano una
+		 * posizione: così il logo disegnato cade esattamente dove sarebbe
+		 * caduto quello in pagina, qualunque siano intestazione, margini o
+		 * altezza scelta nelle impostazioni.
+		 */
+		function measureBrand() {
+			var hostRect = host.getBoundingClientRect();
+			var brandRect = brand.getBoundingClientRect();
+
+			brandX = brandRect.left - hostRect.left + brandRect.width / 2;
+			brandY = brandRect.top - hostRect.top + brandRect.height / 2;
 		}
 
 		function seed() {
 			puffs = [];
 
-			var count = width < 700 ? 14 : 22;
+			/*
+			 * Il numero di volute segue la superficie da coprire, non è
+			 * fisso: la fascia è larga quanto la finestra, e con un numero
+			 * fisso il fumo risultava fitto su uno schermo piccolo e rado
+			 * fino a sparire su un monitor largo. I due limiti evitano gli
+			 * estremi — un pugno di volute perse nel vuoto, o centinaia da
+			 * disegnare su uno schermo molto grande.
+			 */
+			var count = Math.round( ( width * height ) / 22000 );
+
+			count = Math.max( 12, Math.min( 40, count ) );
 
 			for ( var i = 0; i < count; i++ ) {
 				puffs.push( makePuff() );
@@ -1011,6 +1052,13 @@
 			// l'impressione che il marchio stia dentro al fumo e non sopra.
 			puffs.forEach( function ( p, index ) {
 				p.front = index % 2 === 1;
+
+				// Quelle davanti vanno tenute più leggere: devono velare il
+				// marchio, non coprirlo. A parità di opacità il logo finisce
+				// dietro a una nebbia grigia e perde tutto il contrasto.
+				if ( p.front ) {
+					p.alpha *= .62;
+				}
 			} );
 		}
 
@@ -1018,17 +1066,20 @@
 			// Le volute davanti sono più grandi e più tenui, come se fossero
 			// più vicine all'obiettivo: è ciò che dà la sensazione di
 			// profondità senza avere una vera terza dimensione.
-			var size = height * ( 1.1 + Math.random() * 1.4 );
+			var size = height * ( .7 + Math.random() * .9 );
 
 			return {
 				x: Math.random() * width,
-				y: height * ( .2 + Math.random() * .6 ),
+				// Addensate attorno al marchio e diradate verso il fondo,
+				// dove la maschera le sta già facendo svanire: disegnare
+				// molto dove non si vedrà è lavoro sprecato.
+				y: brandY + ( Math.random() - .35 ) * height * .8,
 				size: size,
 				angle: Math.random() * Math.PI * 2,
 				spin: ( Math.random() - .5 ) * .18,
 				driftX: ( Math.random() - .5 ) * 14,
 				driftY: -( 2 + Math.random() * 6 ),
-				alpha: .18 + Math.random() * .3,
+				alpha: .24 + Math.random() * .34,
 				sprite: sprites[ Math.floor( Math.random() * sprites.length ) ],
 				front: false
 			};
@@ -1051,7 +1102,20 @@
 				var w = image.offsetWidth;
 				var h = image.offsetHeight;
 
-				ctx.drawImage( image, ( width - w ) / 2, ( height - h ) / 2, w, h );
+				ctx.drawImage( image, brandX - w / 2, brandY - h / 2, w, h );
+
+				/*
+				 * Seconda passata sommata alla prima: è l'AdditiveBlending
+				 * che nel pen originale rendeva il titolo luminoso. Senza,
+				 * il marchio resta un'immagine piatta appoggiata sopra al
+				 * fumo; con, sembra emettere luce lui stesso e regge il
+				 * confronto con le volute che gli passano davanti.
+				 */
+				ctx.globalCompositeOperation = 'lighter';
+				ctx.globalAlpha = .4;
+				ctx.drawImage( image, brandX - w / 2, brandY - h / 2, w, h );
+				ctx.globalAlpha = 1;
+				ctx.globalCompositeOperation = 'source-over';
 
 				return;
 			}
@@ -1066,7 +1130,7 @@
 			// altrimenti il titolo dentro al canvas risulterebbe più stretto
 			// di com'era in pagina e si vedrebbe il salto.
 			if ( ! textStyle.spacing ) {
-				ctx.fillText( textStyle.text, width / 2, height / 2 );
+				ctx.fillText( textStyle.text, brandX, brandY );
 				return;
 			}
 
@@ -1078,12 +1142,12 @@
 				return w;
 			} );
 
-			var cursor = ( width - total ) / 2;
+			var cursor = brandX - total / 2;
 
 			ctx.textAlign = 'left';
 
 			letters.forEach( function ( letter, index ) {
-				ctx.fillText( letter, cursor, height / 2 );
+				ctx.fillText( letter, cursor, brandY );
 				cursor += widths[ index ];
 			} );
 		}
@@ -1162,7 +1226,7 @@
 		// L'originale si nasconde solo ora: fino a questo punto era lui a
 		// tenere occupata l'intestazione, ed è quello che resta a chi ha lo
 		// script bloccato.
-		host.classList.add( 'is-painted' );
+		brand.classList.add( 'is-painted' );
 
 		window.requestAnimationFrame( frame );
 

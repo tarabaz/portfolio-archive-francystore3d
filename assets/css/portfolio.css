@@ -303,6 +303,10 @@ body.fsp-no-scroll {
 }
 
 .fsp-archive__header {
+	/* Sopra al livello del fumo, che le passa dietro: il marchio lo
+	   disegna il canvas, sottotitolo e riga devono restare leggibili. */
+	position: relative;
+	z-index: 2;
 	text-align: center;
 	margin-bottom: 34px;
 }
@@ -317,36 +321,61 @@ body.fsp-no-scroll {
 }
 
 /*
- * Contenitore del marchio.
+ * Contenitore del marchio: nessuno spazio aggiunto per il fumo.
  *
- * Con l'effetto attivo riceve dei margini generosi: il canvas prende
- * l'area di questo blocco, e senza spazio attorno al logo le volute
- * verrebbero tagliate di netto sul suo bordo invece di sfumare.
+ * Il fumo vive in un livello suo (.fsp-brand-smoke) che si sovrappone
+ * alla pagina senza farne parte, quindi accendere o spegnere l'effetto
+ * non sposta di un pixel sottotitolo, filtri e griglia.
  */
 .fsp-brand {
 	position: relative;
 }
 
-.fsp-brand--smoke {
-	padding: clamp(30px, 6vw, 70px) 0;
+/*
+ * Livello del fumo dell'intestazione.
+ *
+ * position:absolute e non fixed: ancorato in cima alla pagina, scorre
+ * via insieme all'intestazione. Fisso allo schermo resterebbe davanti
+ * alle foto dei pezzi per tutta la navigazione, che è l'ultima cosa che
+ * si vuole in un portfolio.
+ *
+ * Largo quanto la pagina e alto mezza schermata: sborda ampiamente dal
+ * blocco del logo, ed è proprio quello che serve perché il fumo abbia
+ * aria attorno.
+ */
+.fsp-brand-smoke {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 52vh;
+	min-height: 380px;
+	z-index: 1;
+	pointer-events: none;
+	overflow: hidden;
+	/* Dissolvenza verso il basso: il fumo si perde nella pagina invece di
+	   finire con un taglio netto a metà schermo. */
+	-webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
+	mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
 }
 
 /*
- * Il canvas è un rettangolo, e le volute che arrivano al suo bordo ci
- * sbattono contro tagliandosi di netto: si vedeva la cornice squadrata
- * del riquadro in mezzo alla pagina. La maschera ovale fa svanire il
- * fumo prima che ci arrivi, così sembra disperdersi nell'aria invece di
- * finire dentro una scatola.
+ * Dissolvenza sui lati, tenuta separata da quella verticale.
+ *
+ * Le due maschere stanno su due elementi annidati invece che su uno solo
+ * con mask-composite: quella proprietà è supportata a macchia di
+ * leopardo, e dove non c'è il fumo resterebbe tagliato di squadro sui
+ * bordi dello schermo. Due elementi, due maschere semplici, nessuna
+ * sorpresa.
  */
 .fsp-brand__canvas {
-	position: absolute;
-	inset: 0;
+	display: block;
 	width: 100%;
 	height: 100%;
-	pointer-events: none;
-	-webkit-mask-image: radial-gradient(ellipse 62% 58% at 50% 50%, #000 35%, transparent 100%);
-	mask-image: radial-gradient(ellipse 62% 58% at 50% 50%, #000 35%, transparent 100%);
+	-webkit-mask-image: linear-gradient(to right, transparent 0%, #000 18%, #000 82%, transparent 100%);
+	mask-image: linear-gradient(to right, transparent 0%, #000 18%, #000 82%, transparent 100%);
 }
+
 
 /*
  * Il marchio originale sparisce solo quando il canvas ha davvero
@@ -358,8 +387,8 @@ body.fsp-no-scroll {
  * Resta leggibile dai lettori di schermo e dai motori di ricerca, che
  * dal canvas non ricaverebbero nulla.
  */
-.fsp-brand--smoke.is-painted .fsp-archive__logo,
-.fsp-brand--smoke.is-painted .fsp-archive__title {
+.fsp-brand.is-painted .fsp-archive__logo,
+.fsp-brand.is-painted .fsp-archive__title {
 	opacity: 0;
 }
 

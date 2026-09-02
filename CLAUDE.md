@@ -138,6 +138,26 @@ volute davanti; l'`AdditiveBlending` diventa `globalCompositeOperation =
 per le sfilacciature, moltiplicato per una sfumatura circolare perché i bordi
 svaniscano). Quella del pen sta su un server di terzi e non è ridistribuibile.
 
+**Il livello del fumo dell'intestazione sta fuori dal contenuto, non dentro al
+blocco del logo.** Dentro sarebbe largo quanto la colonna di testo e, per avere
+aria attorno al marchio, servirebbero margini veri — che spingono in basso tutta
+la pagina. Da fuori si sovrappone al layout senza farne parte: accendere o
+spegnere l'effetto non muove nulla (verificato misurando le posizioni con e senza).
+Il JS misura `getBoundingClientRect()` del marchio per sapere dove disegnarlo.
+
+**`position: absolute` ancorato in cima, non `fixed`:** il fumo scorre via con
+l'intestazione. Fisso allo schermo resterebbe davanti alle foto dei pezzi per
+tutta la navigazione.
+
+**Le due dissolvenze del fumo stanno su due elementi annidati** (verticale sul
+contenitore, orizzontale sul canvas) invece che su uno solo con `mask-composite`:
+quella proprietà è supportata a macchia di leopardo e dove manca il fumo si
+taglierebbe di squadro sui bordi dello schermo.
+
+**Numero di volute proporzionale all'area**, non fisso: la fascia è larga quanto
+la finestra, e a numero fisso il fumo risulta fitto su uno schermo piccolo e rado
+fino a sparire su un monitor largo.
+
 **Il canvas del marchio ha una maschera ovale sui bordi.** Senza, le volute si
 tagliano di squadro sul bordo del rettangolo e si vede la cornice del canvas in
 mezzo alla pagina.
