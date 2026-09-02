@@ -197,6 +197,21 @@ immagine non ancora scaricata, l'intestazione non è mai vuota — e il testo re
 leggibile da lettori di schermo e motori di ricerca, che dal canvas non
 ricaverebbero nulla.
 
+**Il fumo reagisce solo al cambio di LARGHEZZA della finestra, mai dell'altezza.**
+Su telefono la barra degli indirizzi che si ritrae scorrendo cambia l'altezza e
+scatena una raffica di `resize` (nove per un solo movimento): rigenerando le
+volute il fumo si azzerava e ricompariva altrove — il "reset" visto scorrendo.
+La larghezza scorrendo non cambia mai, quindi filtrando su quella restano solo i
+ridimensionamenti veri. Un ritardo sugli eventi non basta: accorpa la raffica ma
+alla fine rigenera lo stesso.
+
+**Al ridimensionamento vero le volute si riscalano, non si ricreano**
+(`reflow()`): ricrearle fa sparire e ricomparire il fumo, che è lo stesso salto.
+
+**Le altezze usano `lvh` con `vh` come ripiego.** `vh` su telefono è legato
+all'altezza corrente della finestra, quindi cambia quando la barra si nasconde;
+`lvh` è l'altezza a barre nascoste, un numero che scorrere non altera.
+
 **Il fumo animato è un canvas, e costa: tre accorgimenti lo tengono a bada.**
 Lo sbuffo è disegnato una volta sola su un canvas fuori schermo e poi ricopiato
 (ricalcolare venti gradienti radiali per fotogramma è ciò che fa scaldare i

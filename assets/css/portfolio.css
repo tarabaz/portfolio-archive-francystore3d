@@ -246,7 +246,10 @@ body.fsp-no-scroll {
 	z-index: 0;
 	overflow: hidden;
 	line-height: 0;
+	/* lvh: altezza a barre nascoste, che scorrere non cambia. Con vh il
+	   box si ridimensionerebbe al ritrarsi della barra del browser. */
 	height: 78vh;
+	height: 78lvh;
 	/*
 	 * Dissolvenza sul bordo inferiore. Si usa una maschera sull'immagine
 	 * invece di un rettangolo sfumato sovrapposto: la maschera agisce
@@ -341,6 +344,14 @@ body.fsp-no-scroll {
  * in nitidezza, perché il logo non viene più ricopiato.
  */
 .fsp-brand-smoke {
+	/*
+	 * Posizionamento anche sulla classe base, non solo sui due
+	 * modificatori: un livello a cui per errore mancasse --back o --front
+	 * entrerebbe nel flusso e allungherebbe la pagina, che è proprio il
+	 * difetto da cui siamo partiti. I modificatori lo sovrascrivono con
+	 * quello che serve davvero.
+	 */
+	position: absolute;
 	pointer-events: none;
 	overflow: hidden;
 }
@@ -355,7 +366,18 @@ body.fsp-no-scroll {
 	top: 0;
 	left: 0;
 	width: 100%;
+	/*
+	 * lvh e non vh, con vh come ripiego per i browser che non lo
+	 * conoscono.
+	 *
+	 * "vh" su telefono è legato all'altezza della finestra nel momento
+	 * presente: quando la barra degli indirizzi si nasconde scorrendo,
+	 * quel valore cambia e il livello si ridimensiona sotto. "lvh" invece
+	 * è l'altezza a barre nascoste, un numero fisso che scorrere non
+	 * altera — quindi niente ridimensionamenti mentre si naviga.
+	 */
 	height: 58vh;
+	height: 58lvh;
 	min-height: 400px;
 	z-index: 1;
 	-webkit-mask-image: linear-gradient(to bottom, #000 42%, transparent 100%);
@@ -809,6 +831,7 @@ body.fsp-no-scroll {
 	right: 0;
 	z-index: 0;
 	height: 88vh;
+	height: 88lvh;
 	overflow: hidden;
 	line-height: 0;
 	-webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);

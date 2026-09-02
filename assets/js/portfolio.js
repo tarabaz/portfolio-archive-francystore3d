@@ -780,13 +780,7 @@
 			width = host.offsetWidth || window.innerWidth;
 			height = host.offsetHeight || window.innerHeight;
 
-			/*
-			 * Il rapporto pixel si ferma a 1.5 anche sugli schermi che
-			 * dichiarano 3: il fumo è tutto sfocato, la definizione in più
-			 * non si vedrebbe, mentre l'area da disegnare crescerebbe con
-			 * il quadrato del rapporto.
-			 */
-			ratio = Math.min( window.devicePixelRatio || 1, 1.5 );
+			ratio = drawingRatio();
 
 			canvas.width = Math.round( width * ratio );
 			canvas.height = Math.round( height * ratio );
@@ -871,16 +865,26 @@
 		seed();
 		window.requestAnimationFrame( frame );
 
-		var resizeTimer = null;
+		onWidthChange( function () {
+			var oldWidth = width;
+			var oldHeight = height;
 
-		window.addEventListener( 'resize', function () {
-			// Su mobile la barra degli indirizzi che compare e scompare
-			// genera una raffica di resize: si aspetta che si fermi.
-			window.clearTimeout( resizeTimer );
-			resizeTimer = window.setTimeout( function () {
-				resize();
+			resize();
+
+			// Le volute si riscalano invece di essere ricreate: ricrearle
+			// faceva sparire e ricomparire il fumo ad ogni cambio di
+			// dimensione.
+			if ( oldWidth && oldHeight ) {
+				var scaleX = width / oldWidth;
+				var scaleY = height / oldHeight;
+
+				puffs.forEach( function ( p ) {
+					p.x *= scaleX;
+					p.y *= scaleY;
+				} );
+			} else {
 				seed();
-			}, 200 );
+			}
 		} );
 
 		document.addEventListener( 'visibilitychange', function () {
@@ -901,6 +905,59 @@
 	/* ------------------------------------------------------------------
 	 * Logo immerso nel fumo
 	 * ------------------------------------------------------------------ */
+
+	/**
+	 * A che definizione disegnare il fumo.
+	 *
+	 * Il fumo è tutto sfocato: la definizione in più non si vedrebbe,
+	 * mentre l'area da disegnare cresce con il quadrato del rapporto. Su
+	 * telefono si scende ancora, perché lì ogni pixel risparmiato è
+	 * batteria e fluidità — un valore di 1,25 invece di 2 significa
+	 * disegnare il 61% dei pixel in meno.
+	 *
+	 * @return {number}
+	 */
+	function drawingRatio() {
+		var dpr = window.devicePixelRatio || 1;
+		var cap = window.innerWidth <= MOBILE_WIDTH ? 1.25 : 1.5;
+
+		return Math.min( dpr, cap );
+	}
+
+	/**
+	 * Chiama la funzione data solo quando cambia la LARGHEZZA della
+	 * finestra.
+	 *
+	 * Su un telefono, scorrendo, la barra degli indirizzi si nasconde e
+	 * si rimostra: cambia l'altezza della finestra e il browser emette
+	 * una raffica di eventi di ridimensionamento — ne ho contati nove per
+	 * un solo movimento della barra. Reagendo a quegli eventi il fumo
+	 * veniva rigenerato da capo, con le volute in posizioni nuove: è il
+	 * "reset" che si vedeva scorrendo.
+	 *
+	 * La larghezza invece, scorrendo, non cambia mai. Filtrando su quella
+	 * restano solo i ridimensionamenti veri: rotazione dello schermo o
+	 * finestra ridimensionata sul computer.
+	 *
+	 * @param {Function} callback Cosa fare a larghezza cambiata.
+	 */
+	function onWidthChange( callback ) {
+		var lastWidth = window.innerWidth;
+		var timer = null;
+
+		window.addEventListener( 'resize', function () {
+			if ( window.innerWidth === lastWidth ) {
+				return;
+			}
+
+			lastWidth = window.innerWidth;
+
+			// Durante una rotazione o un trascinamento del bordo gli eventi
+			// arrivano comunque a raffica: si aspetta che si fermino.
+			window.clearTimeout( timer );
+			timer = window.setTimeout( callback, 200 );
+		} );
+	}
 
 	/**
 	 * Manopole dell'effetto, dalle impostazioni.
@@ -986,7 +1043,7 @@
 				return false;
 			}
 
-			ratio = Math.min( window.devicePixelRatio || 1, 2 );
+			ratio = drawingRatio();
 
 			canvas.width = Math.round( width * ratio );
 			canvas.height = Math.round( height * ratio );
@@ -996,21 +1053,67 @@
 			return true;
 		}
 
+		/**
+		 * Quante volute servono per la superficie attuale.
+		 *
+		 * Il numero segue l'area e non è fisso: a numero fisso il fumo
+		 * risulta fitto su uno schermo piccolo e rado fino a sparire su un
+		 * monitor largo. I due limiti evitano gli estremi.
+		 *
+		 * @return {number}
+		 */
+		function puffCount() {
+			var count = Math.round( ( width * height ) / Math.max( 4000, params.areaPerPuff ) );
+
+			return Math.max( 4, Math.min( 60, count ) );
+		}
+
 		function seed() {
 			puffs = [];
 
-			/*
-			 * Il numero di volute segue la superficie da coprire, non è
-			 * fisso: a numero fisso il fumo risulta fitto su uno schermo
-			 * piccolo e rado fino a sparire su un monitor largo. I due
-			 * limiti evitano gli estremi.
-			 */
-			var count = Math.round( ( width * height ) / Math.max( 4000, params.areaPerPuff ) );
-
-			count = Math.max( 4, Math.min( 60, count ) );
+			var count = puffCount();
 
 			for ( var i = 0; i < count; i++ ) {
 				puffs.push( makePuff() );
+			}
+		}
+
+		/**
+		 * Adatta le volute esistenti alle nuove dimensioni invece di
+		 * ricrearle.
+		 *
+		 * Ricreandole, a ogni ridimensionamento vero il fumo sparirebbe e
+		 * ricomparirebbe altrove — lo stesso salto che si vedeva scorrendo
+		 * su un telefono. Riscalando le posizioni, il fumo si adatta
+		 * continuando il movimento che stava facendo.
+		 *
+		 * @param {number} oldWidth  Larghezza precedente.
+		 * @param {number} oldHeight Altezza precedente.
+		 */
+		function reflow( oldWidth, oldHeight ) {
+			if ( ! oldWidth || ! oldHeight ) {
+				seed();
+				return;
+			}
+
+			var scaleX = width / oldWidth;
+			var scaleY = height / oldHeight;
+
+			puffs.forEach( function ( p ) {
+				p.x *= scaleX;
+				p.y *= scaleY;
+			} );
+
+			// Il numero dipende dall'area: si aggiunge o si toglie solo la
+			// differenza, lasciando al loro posto le volute già in scena.
+			var target = puffCount();
+
+			while ( puffs.length < target ) {
+				puffs.push( makePuff() );
+			}
+
+			if ( puffs.length > target ) {
+				puffs.length = target;
 			}
 		}
 
@@ -1089,17 +1192,13 @@
 		host.classList.add( 'is-painted' );
 		window.requestAnimationFrame( frame );
 
-		var resizeTimer = null;
+		onWidthChange( function () {
+			var oldWidth = width;
+			var oldHeight = height;
 
-		window.addEventListener( 'resize', function () {
-			// Su mobile la barra degli indirizzi che compare e scompare
-			// genera una raffica di resize: si aspetta che si fermi.
-			window.clearTimeout( resizeTimer );
-			resizeTimer = window.setTimeout( function () {
-				if ( resize() ) {
-					seed();
-				}
-			}, 200 );
+			if ( resize() ) {
+				reflow( oldWidth, oldHeight );
+			}
 		} );
 
 		document.addEventListener( 'visibilitychange', function () {
