@@ -306,10 +306,10 @@ body.fsp-no-scroll {
 }
 
 .fsp-archive__header {
-	/* Sopra al livello del fumo, che le passa dietro: il marchio lo
-	   disegna il canvas, sottotitolo e riga devono restare leggibili. */
 	position: relative;
-	z-index: 2;
+	/* Sotto al livello del fumo (z-index 2), che disegna il marchio e
+	   deve poterlo sovrapporre alle sue volute. */
+	z-index: 1;
 	text-align: center;
 	margin-bottom: 34px;
 }
@@ -335,109 +335,79 @@ body.fsp-no-scroll {
 }
 
 /*
- * I due livelli del fumo.
+ * Livello del fumo dell'intestazione.
  *
- * Il logo non è più disegnato dentro a un canvas: è rimasto un'immagine
- * vera in pagina e scorre per conto suo. L'effetto "dentro al fumo"
- * nasce dalla sovrapposizione — un livello sotto e uno sopra — invece
- * che dall'ordine di disegno dentro un canvas solo. Ci si guadagna anche
- * in nitidezza, perché il logo non viene più ricopiato.
+ * Uno solo, e il marchio viene disegnato dentro al canvas: è l'unico
+ * modo per avere l'ordine vero del pen — volute dietro, marchio, volute
+ * davanti. Con due livelli sovrapposti quello sopra può solo velare
+ * quello sotto, mai passargli dietro.
+ *
+ * position:fixed, quindi il fumo resta fermo mentre la pagina scorre.
+ * Il marchio da solo resterebbe incollato lì: ci pensa il JavaScript,
+ * disegnandolo spostato in su di quanto si è scorso e dissolvendolo
+ * nello stesso spazio.
  */
 .fsp-brand-smoke {
-	/*
-	 * Posizionamento anche sulla classe base, non solo sui due
-	 * modificatori: un livello a cui per errore mancasse --back o --front
-	 * entrerebbe nel flusso e allungherebbe la pagina, che è proprio il
-	 * difetto da cui siamo partiti. I modificatori lo sovrascrivono con
-	 * quello che serve davvero.
-	 */
-	position: absolute;
-	pointer-events: none;
-	overflow: hidden;
-}
-
-/*
- * Dietro: bloccato sullo schermo. Resta fermo mentre tutta la pagina
- * scorre, e sta sotto al contenuto, quindi non vela mai le foto dei
- * pezzi che gli passano davanti.
- */
-.fsp-brand-smoke--back {
 	position: fixed;
 	top: 0;
 	left: 0;
 	width: 100%;
 	/*
 	 * lvh e non vh, con vh come ripiego per i browser che non lo
-	 * conoscono.
-	 *
-	 * "vh" su telefono è legato all'altezza della finestra nel momento
-	 * presente: quando la barra degli indirizzi si nasconde scorrendo,
-	 * quel valore cambia e il livello si ridimensiona sotto. "lvh" invece
-	 * è l'altezza a barre nascoste, un numero fisso che scorrere non
-	 * altera — quindi niente ridimensionamenti mentre si naviga.
+	 * conoscono. "vh" su telefono è legato all'altezza della finestra nel
+	 * momento presente: quando la barra degli indirizzi si nasconde
+	 * scorrendo, quel valore cambia e il livello si ridimensiona sotto.
+	 * "lvh" è l'altezza a barre nascoste, un numero che scorrere non
+	 * altera.
 	 */
 	height: 58vh;
 	height: 58lvh;
 	min-height: 400px;
-	z-index: 1;
+	z-index: 2;
+	pointer-events: none;
+	overflow: hidden;
+	/* Dissolvenza verso il basso: il fumo si perde nella pagina invece di
+	   finire con un taglio netto a metà schermo. */
 	-webkit-mask-image: linear-gradient(to bottom, #000 42%, transparent 100%);
 	mask-image: linear-gradient(to bottom, #000 42%, transparent 100%);
 }
 
 /*
- * Davanti: solidale al marchio, se ne va con lui appena si scorre.
+ * Dissolvenza sui lati, tenuta separata da quella verticale.
  *
- * Fisso anche questo passerebbe sopra alle foto per tutta la
- * navigazione, velandole. Legandolo al marchio, l'effetto si vede dove
- * serve — attorno al logo — e sparisce appena si entra nella griglia.
- *
- * Largo più del blocco che lo contiene (100vw ricentrato) perché il
- * marchio sta dentro la colonna di testo, mentre il fumo deve
- * attraversare tutta la pagina.
+ * Le due maschere stanno su due elementi annidati invece che su uno solo
+ * con mask-composite: quella proprietà è supportata a macchia di
+ * leopardo, e dove non c'è il fumo resterebbe tagliato di squadro sui
+ * bordi dello schermo.
  */
-.fsp-brand-smoke--front {
-	position: absolute;
-	top: 50%;
-	left: 50%;
-	width: 100vw;
-	height: 300%;
-	min-height: 260px;
-	transform: translate(-50%, -50%);
-	z-index: 2;
-	/*
-	 * Somma di luce con quello che ha sotto, logo compreso: è
-	 * l'AdditiveBlending del pen originale. Senza, questo livello è una
-	 * velina grigia appoggiata sopra e dove passa sporca il logo invece
-	 * di accenderlo — la differenza fra "immagine con della nebbia
-	 * sopra" e "oggetto dentro la nebbia".
-	 *
-	 * "screen" e non "plus-lighter": su un fondo scuro il risultato è
-	 * praticamente lo stesso, ma è supportato da anni su tutti i browser
-	 * mentre plus-lighter è arrivato di recente.
-	 */
-	mix-blend-mode: screen;
-	-webkit-mask-image: radial-gradient(ellipse 46% 46% at 50% 50%, #000 20%, transparent 100%);
-	mask-image: radial-gradient(ellipse 46% 46% at 50% 50%, #000 20%, transparent 100%);
-}
-
 .fsp-brand-smoke__canvas {
 	display: block;
 	width: 100%;
 	height: 100%;
-}
-
-/* Dissolvenza sui lati del livello di fondo, tenuta separata da quella
-   verticale: le due maschere su un elemento solo richiederebbero
-   mask-composite, supportato a macchia di leopardo. */
-.fsp-brand-smoke--back .fsp-brand-smoke__canvas {
 	-webkit-mask-image: linear-gradient(to right, transparent 0%, #000 16%, #000 84%, transparent 100%);
 	mask-image: linear-gradient(to right, transparent 0%, #000 16%, #000 84%, transparent 100%);
 }
 
 /*
- * Il marchio sta fra i due livelli, e la sua opacità si regola dalle
- * impostazioni: abbassandola si fonde con il fumo, come se fosse dentro
- * la nebbia invece che appoggiato sopra.
+ * Il marchio originale sparisce solo quando il canvas ha disegnato: la
+ * classe la mette il JavaScript a lavoro finito. Si usa opacity e non
+ * display:none perché il canvas si dimensiona e si posiziona su questo
+ * blocco, e legge da qui quanto è grande il logo — togliendolo dal
+ * flusso non ci sarebbe più niente da misurare.
+ *
+ * Resta leggibile dai lettori di schermo e dai motori di ricerca, che
+ * dal canvas non ricaverebbero nulla.
+ */
+.fsp-brand.is-painted .fsp-archive__logo,
+.fsp-brand.is-painted .fsp-archive__title {
+	opacity: 0;
+}
+
+/*
+ * Aspetto del marchio quando il canvas NON è in funzione: effetto
+ * spento, JavaScript fermo, immagine non ancora scaricata. Opacità e
+ * bagliore dalle impostazioni, così il ripiego somiglia comunque a
+ * quello che si sarebbe visto.
  */
 .fsp-brand--smoke .fsp-archive__logo,
 .fsp-brand--smoke .fsp-archive__title {
@@ -447,16 +417,11 @@ body.fsp-no-scroll {
 }
 
 /*
- * Bagliore attorno al logo.
- *
  * drop-shadow e non box-shadow: la seconda disegnerebbe l'alone attorno
  * al rettangolo dell'immagine, questa lo segue lungo i contorni veri
- * delle forme, rispettando la trasparenza del PNG.
- *
- * Tre ombre sovrapposte a raggio crescente invece di una sola: un alone
- * unico e largo risulta piatto e slavato, tre danno un nucleo denso
- * vicino alle lettere che si dirada allontanandosi, che è come si
- * comporta la luce vera.
+ * delle forme, rispettando la trasparenza del PNG. Tre ombre a raggio
+ * crescente invece di una larga: una sola risulta piatta, tre danno un
+ * nucleo denso che si dirada, come fa la luce vera.
  */
 .fsp-brand--smoke .fsp-archive__logo img,
 .fsp-brand--smoke .fsp-archive__title {

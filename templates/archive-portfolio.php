@@ -41,6 +41,9 @@ $fsp_smoke_params = wp_json_encode(
 		'opacity'   => FSP_Settings::get_smoke_value( 'smoke_opacity' ),
 		'speed'     => FSP_Settings::get_smoke_value( 'smoke_speed' ),
 		'size'      => FSP_Settings::get_smoke_value( 'smoke_size' ),
+		'fade'      => FSP_Settings::get_logo_fade_distance(),
+		'glow'      => FSP_Settings::get_smoke_value( 'logo_glow' ),
+		'logoAlpha' => FSP_Settings::get_smoke_value( 'logo_opacity' ),
 	)
 );
 $fsp_effect        = FSP_Settings::get_background_effect();
@@ -171,7 +174,7 @@ if ( is_tax( FSP_Taxonomies::SECTION ) ) {
 		 * alle foto dei pezzi per tutta la navigazione velandole.
 		 */
 		?>
-		<div class="fsp-brand-smoke fsp-brand-smoke--back" data-fsp-brand-smoke="back" aria-hidden="true"></div>
+		<div class="fsp-brand-smoke" data-fsp-brand-smoke aria-hidden="true"></div>
 	<?php endif; ?>
 
 	<div class="fsp-archive__overlay" aria-hidden="true"></div>
@@ -208,9 +211,7 @@ if ( is_tax( FSP_Taxonomies::SECTION ) ) {
 			<div class="fsp-brand<?php echo $fsp_logo_smoke ? ' fsp-brand--smoke' : ''; ?>"
 				data-fsp-brand
 				style="--fsp-logo-opacity: <?php echo esc_attr( (string) ( $fsp_logo_opacity / 100 ) ); ?>; --fsp-logo-glow: <?php echo esc_attr( (string) round( $fsp_logo_glow * .32, 2 ) ); ?>px; --fsp-glow-color: <?php echo esc_attr( $fsp_smoke_color ); ?>">
-				<?php if ( $fsp_logo_smoke ) : ?>
-					<div class="fsp-brand-smoke fsp-brand-smoke--front" data-fsp-brand-smoke="front" aria-hidden="true"></div>
-				<?php endif; ?>
+
 				<?php if ( $fsp_logo_url ) : ?>
 					<h1 class="fsp-archive__logo" style="--fsp-logo-height: <?php echo esc_attr( (string) $fsp_logo_height ); ?>px">
 						<img src="<?php echo esc_url( $fsp_logo_url ); ?>"

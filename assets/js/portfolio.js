@@ -907,6 +907,15 @@
 	 * ------------------------------------------------------------------ */
 
 	/**
+	 * Posizione di scorrimento della pagina.
+	 *
+	 * @return {number}
+	 */
+	function scrollTop() {
+		return window.pageYOffset || document.documentElement.scrollTop || 0;
+	}
+
+	/**
 	 * A che definizione disegnare il fumo.
 	 *
 	 * Il fumo è tutto sfocato: la definizione in più non si vedrebbe,
@@ -984,7 +993,12 @@
 			alphaBase: .08 + ( opacity / 100 ) * .5,
 			alphaSpread: .1 + ( opacity / 100 ) * .35,
 			speed: speed / 50,
-			sizeFactor: .45 + ( size / 100 ) * 1.15
+			sizeFactor: .45 + ( size / 100 ) * 1.15,
+			// Distanza in pixel su cui il logo accompagna la pagina
+			// svanendo. Arriva già in pixel, non in centesimi.
+			fade: Math.max( 0, parseInt( raw.fade, 10 ) || 0 ),
+			logoAlpha: clamp01( raw.logoAlpha, 100 ) / 100,
+			glow: clamp01( raw.glow, 45 )
 		};
 	}
 
@@ -1025,6 +1039,37 @@
 		canvas.className = 'fsp-brand-smoke__canvas';
 		host.appendChild( canvas );
 
+		/*
+		 * Il marchio torna a essere disegnato dentro al canvas: è l'unico
+		 * modo per avere l'ordine vero del pen — volute dietro, marchio,
+		 * volute davanti — invece di due livelli sovrapposti che possono
+		 * solo velarsi a vicenda.
+		 *
+		 * Il canvas è fisso, quindi il marchio da solo resterebbe
+		 * incollato in cima. Per i primi pixel di scorrimento lo si
+		 * disegna spostato in su di quanto si è scorso, così accompagna
+		 * la pagina, e nello stesso spazio lo si dissolve. Superata quella
+		 * distanza è invisibile e non dà più fastidio; tornando in cima
+		 * ripercorre tutto al contrario, perché è funzione della posizione
+		 * di scorrimento e non di un'animazione a senso unico.
+		 */
+		var brand = document.querySelector( '[data-fsp-brand]' );
+		var brandImage = brand ? brand.querySelector( '[data-fsp-brand-image]' ) : null;
+
+		// Disegnare un'immagine non ancora pronta non produce nulla, e il
+		// marchio sparirebbe: si riprova a caricamento avvenuto.
+		if ( brandImage && ! brandImage.complete ) {
+			brandImage.addEventListener( 'load', function () {
+				buildSmokeLayer( host );
+			}, { once: true } );
+
+			return;
+		}
+		var brandText = brand ? brand.querySelector( '[data-fsp-brand-text]' ) : null;
+		var brandX = 0;
+		var brandY = 0;
+		var textStyle = null;
+
 		var params = smokeParams();
 		var rgb = smokeColor();
 		var sprites = [ createSmokeSprite( rgb, 3 ), createSmokeSprite( rgb, 17 ), createSmokeSprite( rgb, 41 ) ];
@@ -1050,7 +1095,138 @@
 
 			ctx.setTransform( ratio, 0, 0, ratio, 0, 0 );
 
+			measureBrand();
+
 			return true;
+		}
+
+		/**
+		 * Misura dove cade il marchio dentro al canvas.
+		 *
+		 * Si misura l'elemento vero invece di calcolare una posizione: così
+		 * il marchio disegnato cade esattamente dove sarebbe caduto quello
+		 * in pagina, qualunque siano intestazione, margini o altezza
+		 * scelta nelle impostazioni. Si somma lo scorrimento corrente
+		 * perché getBoundingClientRect() misura rispetto allo schermo,
+		 * mentre qui serve la posizione a pagina in cima.
+		 */
+		function measureBrand() {
+			if ( ! brand ) {
+				return;
+			}
+
+			var hostRect = host.getBoundingClientRect();
+			var brandRect = brand.getBoundingClientRect();
+
+			brandX = brandRect.left - hostRect.left + brandRect.width / 2;
+			brandY = brandRect.top - hostRect.top + brandRect.height / 2 + scrollTop();
+
+			if ( brandText && ! textStyle ) {
+				var computed = window.getComputedStyle( brandText );
+
+				textStyle = {
+					font: computed.fontWeight + ' ' + computed.fontSize + ' ' + computed.fontFamily,
+					color: computed.color,
+					spacing: parseFloat( computed.letterSpacing ) || 0,
+					text: brandText.textContent.trim()
+				};
+			}
+		}
+
+		/**
+		 * Disegna il marchio con lo spostamento e la dissolvenza dovuti
+		 * alla posizione di scorrimento.
+		 *
+		 * @return {boolean} False se il marchio è ormai invisibile.
+		 */
+		function drawBrand() {
+			if ( ! brand || ( ! brandImage && ! textStyle ) ) {
+				return false;
+			}
+
+			var scrolled = scrollTop();
+			var distance = params.fade;
+
+			// A distanza 0 la dissolvenza è spenta: il marchio resta dov'è.
+			var progress = distance > 0 ? Math.min( 1, scrolled / distance ) : 0;
+			var alpha = params.logoAlpha * ( 1 - progress );
+
+			if ( alpha <= .01 ) {
+				return false;
+			}
+
+			// Accompagna la pagina finché non ha percorso la distanza
+			// impostata, poi si ferma: oltre è comunque invisibile.
+			var offset = Math.min( scrolled, distance );
+			var y = brandY - offset;
+
+			ctx.globalCompositeOperation = 'source-over';
+			ctx.globalAlpha = alpha;
+
+			if ( brandImage ) {
+				var w = brandImage.offsetWidth;
+				var h = brandImage.offsetHeight;
+
+				ctx.drawImage( brandImage, brandX - w / 2, y - h / 2, w, h );
+
+				/*
+				 * Seconda passata sommata alla prima: è l'AdditiveBlending
+				 * del pen, quello che rende il marchio luminoso invece di
+				 * lasciarlo un'immagine piatta appoggiata sul fumo.
+				 */
+				if ( params.glow > 0 ) {
+					ctx.globalCompositeOperation = 'lighter';
+					ctx.globalAlpha = alpha * ( params.glow / 100 ) * .8;
+					ctx.drawImage( brandImage, brandX - w / 2, y - h / 2, w, h );
+				}
+			} else {
+				drawBrandText( y );
+			}
+
+			ctx.globalAlpha = 1;
+			ctx.globalCompositeOperation = 'source-over';
+
+			return true;
+		}
+
+		/**
+		 * Disegna il titolo scritto, quando non c'è un logo.
+		 *
+		 * @param {number} y Posizione verticale del centro.
+		 */
+		function drawBrandText( y ) {
+			ctx.font = textStyle.font;
+			ctx.fillStyle = textStyle.color;
+			ctx.textBaseline = 'middle';
+
+			/*
+			 * La spaziatura fra le lettere non esiste come proprietà del
+			 * canvas: si disegna lettera per lettera aggiungendola a mano,
+			 * altrimenti il titolo dentro al canvas risulterebbe più
+			 * stretto di com'era in pagina e si vedrebbe il salto.
+			 */
+			if ( ! textStyle.spacing ) {
+				ctx.textAlign = 'center';
+				ctx.fillText( textStyle.text, brandX, y );
+				return;
+			}
+
+			var letters = textStyle.text.split( '' );
+			var total = 0;
+			var widths = letters.map( function ( letter ) {
+				var w = ctx.measureText( letter ).width + textStyle.spacing;
+				total += w;
+				return w;
+			} );
+
+			var cursor = brandX - total / 2;
+
+			ctx.textAlign = 'left';
+
+			letters.forEach( function ( letter, index ) {
+				ctx.fillText( letter, cursor, y );
+				cursor += widths[ index ];
+			} );
 		}
 
 		/**
@@ -1076,6 +1252,27 @@
 			for ( var i = 0; i < count; i++ ) {
 				puffs.push( makePuff() );
 			}
+
+			assignDepth();
+		}
+
+		/**
+		 * Divide le volute fra quelle dietro e quelle davanti al marchio.
+		 *
+		 * Le davanti si tengono più leggere: devono velare il marchio, non
+		 * coprirlo. A parità di opacità il logo finisce dietro a una nebbia
+		 * grigia e perde tutto il contrasto.
+		 */
+		function assignDepth() {
+			puffs.forEach( function ( p, index ) {
+				var front = index % 2 === 1;
+
+				if ( front && ! p.front ) {
+					p.alpha *= .62;
+				}
+
+				p.front = front;
+			} );
 		}
 
 		/**
@@ -1115,6 +1312,8 @@
 			if ( puffs.length > target ) {
 				puffs.length = target;
 			}
+
+			assignDepth();
 		}
 
 		function makePuff() {
@@ -1151,10 +1350,16 @@
 
 			ctx.setTransform( ratio, 0, 0, ratio, 0, 0 );
 			ctx.clearRect( 0, 0, width, height );
-			ctx.globalCompositeOperation = 'lighter';
 
-			for ( var i = 0; i < puffs.length; i++ ) {
-				var p = puffs[ i ];
+			var i;
+			var p;
+
+			// Prima si fa avanzare il fumo, poi lo si disegna in due
+			// riprese: è la separazione fra chi sta dietro e chi davanti al
+			// marchio a dare la profondità, e nel 3D del pen la faceva la
+			// coordinata z.
+			for ( i = 0; i < puffs.length; i++ ) {
+				p = puffs[ i ];
 
 				p.angle += p.spin * elapsed;
 				p.x += p.driftX * elapsed;
@@ -1171,17 +1376,51 @@
 				} else if ( p.x + p.size / 2 < 0 ) {
 					p.x = width + p.size / 2;
 				}
+			}
 
-				ctx.save();
-				ctx.globalAlpha = p.alpha;
-				ctx.translate( p.x, p.y );
-				ctx.rotate( p.angle );
-				ctx.drawImage( p.sprite, -p.size / 2, -p.size / 2, p.size, p.size );
-				ctx.restore();
+			ctx.globalCompositeOperation = 'lighter';
+
+			for ( i = 0; i < puffs.length; i++ ) {
+				if ( ! puffs[ i ].front ) {
+					drawPuff( puffs[ i ] );
+				}
+			}
+
+			var brandDrawn = drawBrand();
+
+			ctx.globalCompositeOperation = 'lighter';
+
+			for ( i = 0; i < puffs.length; i++ ) {
+				if ( puffs[ i ].front ) {
+					// Le volute davanti si disegnano sempre: sono fumo, non
+					// dipendono dal marchio. Quando il marchio è svanito
+					// restano loro insieme a quelle dietro, e il fumo
+					// continua uniforme.
+					drawPuff( puffs[ i ] );
+				}
 			}
 
 			ctx.globalAlpha = 1;
 			ctx.globalCompositeOperation = 'source-over';
+
+			// Segnalato per chi legge: il marchio smette di essere disegnato
+			// appena la dissolvenza lo porta a zero, così non si paga il
+			// disegno di qualcosa di invisibile.
+			void brandDrawn;
+		}
+
+		/**
+		 * Disegna una voluta ruotata sulla propria posizione.
+		 *
+		 * @param {Object} p La voluta.
+		 */
+		function drawPuff( p ) {
+			ctx.save();
+			ctx.globalAlpha = p.alpha;
+			ctx.translate( p.x, p.y );
+			ctx.rotate( p.angle );
+			ctx.drawImage( p.sprite, -p.size / 2, -p.size / 2, p.size, p.size );
+			ctx.restore();
 		}
 
 		if ( ! resize() ) {
@@ -1189,7 +1428,18 @@
 		}
 
 		seed();
-		host.classList.add( 'is-painted' );
+
+		/*
+		 * Da qui in poi il marchio lo disegna il canvas, e l'originale in
+		 * pagina si nasconde. Fino a questo punto era lui a occupare
+		 * l'intestazione: se lo script non parte, se l'immagine non si
+		 * scarica o se l'effetto è spento, resta quello e l'intestazione
+		 * non è mai vuota.
+		 */
+		if ( brand ) {
+			brand.classList.add( 'is-painted' );
+		}
+
 		window.requestAnimationFrame( frame );
 
 		onWidthChange( function () {

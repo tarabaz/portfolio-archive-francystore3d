@@ -53,6 +53,7 @@ class FSP_Settings {
 			'smoke_size'             => 55,
 			'logo_opacity'           => 100,
 			'logo_glow'              => 45,
+			'logo_fade_distance'     => 20,
 			'instagram_handle'       => '',
 			'whatsapp_number'        => '',
 			'attribute_suggestions'  => "Alimentazione\nTipo illuminazione\nScala\nBase inclusa\nVerniciatura\nPeso\nPersonalizzabile",
@@ -210,6 +211,22 @@ class FSP_Settings {
 				'help'  => __( 'Alone luminoso attorno alle forme del logo, del colore del fumo. Rende al meglio con un logo di un colore solo e chiaro su sfondo trasparente: su un logo con parti scure l\'alone si vede poco, perché segue i contorni di ciò che è già illuminato. A 0 è spento.', 'francystore-portfolio' ),
 			),
 		);
+	}
+
+	/**
+	 * Su quanti pixel di scorrimento il logo accompagna la pagina
+	 * svanendo.
+	 *
+	 * È in pixel e non in centesimi come le altre manopole perché qui il
+	 * numero ha un significato diretto — è proprio lo spazio che il logo
+	 * percorre prima di sparire — e conviene poterlo indicare esatto.
+	 *
+	 * @return int 0 se la dissolvenza è spenta.
+	 */
+	public static function get_logo_fade_distance() {
+		$value = (int) self::get( 'logo_fade_distance' );
+
+		return max( 0, min( 600, $value ) );
 	}
 
 	/**
@@ -438,6 +455,10 @@ class FSP_Settings {
 
 		$color                  = isset( $input['smoke_color'] ) ? sanitize_hex_color( $input['smoke_color'] ) : '';
 		$output['smoke_color'] = $color ? $color : '#8fb6c8';
+
+		$output['logo_fade_distance'] = isset( $input['logo_fade_distance'] )
+			? max( 0, min( 600, absint( $input['logo_fade_distance'] ) ) )
+			: 20;
 
 		// Le manopole restano dentro 0-100: un valore fuori scala viene
 		// riportato al limite invece di far fallire tutto il salvataggio.
@@ -728,6 +749,27 @@ class FSP_Settings {
 							</td>
 						</tr>
 					<?php endforeach; ?>
+				</table>
+
+				<table class="form-table fsp-smoke-table" role="presentation">
+					<tr>
+						<th scope="row">
+							<label for="fsp-logo-fade"><?php esc_html_e( 'Scorrimento del logo', 'francystore-portfolio' ); ?></label>
+						</th>
+						<td>
+							<input type="number"
+								id="fsp-logo-fade"
+								class="small-text"
+								min="0"
+								max="600"
+								step="1"
+								name="<?php echo esc_attr( self::OPTION_NAME ); ?>[logo_fade_distance]"
+								value="<?php echo esc_attr( (string) self::get_logo_fade_distance() ); ?>"> px
+							<p class="description">
+								<?php esc_html_e( 'Appena inizi a scorrere il logo accompagna la pagina per questi pixel e nel frattempo svanisce; oltre, resta invisibile. Tornando in cima ripercorre la stessa distanza al contrario e ricompare. Il fumo invece resta fermo. A 0 la dissolvenza è spenta e il logo rimane in cima allo schermo per tutta la pagina.', 'francystore-portfolio' ); ?>
+							</p>
+						</td>
+					</tr>
 				</table>
 
 				<p class="description fsp-settings__intro">

@@ -138,13 +138,22 @@ volute davanti; l'`AdditiveBlending` diventa `globalCompositeOperation =
 per le sfilacciature, moltiplicato per una sfumatura circolare perché i bordi
 svaniscano). Quella del pen sta su un server di terzi e non è ridistribuibile.
 
-**Due livelli di fumo, e il logo NON è più disegnato dentro al canvas.** Quello
-dietro è `fixed` (resta fermo sullo schermo, e sta sotto al contenuto quindi non
-vela mai le foto); quello davanti è `absolute` dentro al blocco del marchio, così
-se ne va con lui appena si scorre. Fisso anche il davanti, passerebbe sopra alle
-foto per tutta la navigazione. Il logo resta un'immagine vera in pagina: scorre
-per conto suo, resta nitido, e la sua opacità è una variabile CSS dalle
-impostazioni.
+**Un solo canvas fisso, con il marchio disegnato dentro.** È l'unico modo per
+avere l'ordine vero del pen — volute dietro, marchio, volute davanti: due livelli
+sovrapposti possono solo velarsi a vicenda, mai passarsi dietro. Il canvas è
+`fixed`, quindi il fumo resta fermo mentre la pagina scorre; il marchio da solo
+resterebbe incollato lì, e allora per i primi pixel di scorrimento lo si disegna
+spostato in su di quanto si è scorso — così accompagna la pagina — dissolvendolo
+nello stesso spazio. Oltre quella distanza è invisibile e non viene più disegnato.
+Essendo funzione della posizione di scorrimento e non un'animazione a senso unico,
+tornando in cima ripercorre tutto al contrario da sé.
+
+**Il fumo non svanisce mai: solo il marchio.** La dissolvenza tocca l'opacità con
+cui si disegna il logo, non il canvas.
+
+**Storico (non rifare):** c'è stato un giro con due livelli separati, uno fisso
+dietro e uno solidale al marchio davanti. Risolveva lo scorrimento ma perdeva
+l'ordine di disegno, e il livello davanti poteva solo velare il logo.
 
 **Il livello di fumo davanti ha `mix-blend-mode: screen`**, cioè
 l'`AdditiveBlending` del pen: dove passa sul logo lo accende invece di sporcarlo
