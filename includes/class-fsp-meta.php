@@ -203,6 +203,67 @@ class FSP_Meta {
 	}
 
 	/**
+	 * Pulsanti di contatto da mostrare nella scheda, nell'ordine.
+	 *
+	 * La decisione sta qui e non dentro al template perché le tre fonti
+	 * sono indipendenti fra loro e vanno valutate una per una: il link
+	 * al post riguarda il singolo pezzo, profilo e WhatsApp arrivano
+	 * dalle impostazioni. Annidarle in un unico "se" fa sparire tutto
+	 * quando ne manca una — ed è esattamente quello che succedeva al
+	 * link del post quando il profilo Instagram non era compilato.
+	 *
+	 * @param int    $post_id   ID del pezzo.
+	 * @param string $reference Codice o titolo da citare nel messaggio.
+	 * @return array<int,array{url:string,label:string,variant:string,copy:string}>
+	 */
+	public static function get_contact_links( $post_id, $reference ) {
+		$links = array();
+
+		$post_on_instagram = self::get_instagram_url( $post_id );
+
+		if ( $post_on_instagram ) {
+			$links[] = array(
+				'url'     => $post_on_instagram,
+				'label'   => __( 'Guardalo su Instagram', 'francystore-portfolio' ),
+				'variant' => 'post',
+				'copy'    => '',
+			);
+		}
+
+		$profile = FSP_Settings::get_instagram_url();
+
+		if ( $profile ) {
+			$links[] = array(
+				'url'     => $profile,
+				'label'   => __( 'Scrivimi su Instagram', 'francystore-portfolio' ),
+				'variant' => 'ig',
+				// Instagram non accetta messaggi precompilati: il riferimento
+				// del pezzo si copia negli appunti e si incolla nel DM.
+				'copy'    => $reference,
+			);
+		}
+
+		$whatsapp = FSP_Settings::get_whatsapp_number();
+
+		if ( $whatsapp ) {
+			$links[] = array(
+				'url'     => 'https://wa.me/' . $whatsapp . '?text=' . rawurlencode(
+					sprintf(
+						/* translators: %s: codice o titolo del pezzo. */
+						__( 'Ciao! Vorrei informazioni su: %s', 'francystore-portfolio' ),
+						$reference
+					)
+				),
+				'label'   => __( 'Scrivimi su WhatsApp', 'francystore-portfolio' ),
+				'variant' => 'wa',
+				'copy'    => '',
+			);
+		}
+
+		return $links;
+	}
+
+	/**
 	 * Immagini della scheda, nell'ordine in cui vanno mostrate: prima la
 	 * principale, poi le altre.
 	 *

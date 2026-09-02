@@ -785,6 +785,20 @@ body.fsp-no-scroll {
    CONTATTO
    -------------------------------------------------------------------- */
 
+/*
+ * Riquadro a sé, sotto la scheda tecnica: prima era in coda al pannello
+ * e il pulsante si leggeva come l'ultima riga dei dati invece che come
+ * l'invito ad agire che è.
+ */
+.fsp-contact {
+	margin: 16px 0 0;
+	padding: 22px;
+	background: var(--fsp-panel-soft);
+	border: 1px solid var(--fsp-line-strong);
+	border-radius: var(--fsp-radius);
+	backdrop-filter: blur(6px);
+}
+
 .fsp-contact__title {
 	margin-bottom: 12px;
 	font-size: 11px;
@@ -806,6 +820,10 @@ body.fsp-no-scroll {
 	text-transform: uppercase;
 	text-align: center;
 	transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.fsp-contact__btn:last-of-type {
+	margin-bottom: 0;
 }
 
 .fsp-contact__btn:hover {

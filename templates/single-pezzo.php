@@ -39,10 +39,6 @@ while ( have_posts() ) :
 	$fsp_bg_id  = FSP_Meta::get_background_id( $fsp_id );
 	$fsp_bg_url = $fsp_bg_id ? wp_get_attachment_image_url( $fsp_bg_id, 'full' ) : '';
 
-	$fsp_instagram_url = FSP_Settings::get_instagram_url();
-	$fsp_whatsapp      = FSP_Settings::get_whatsapp_number();
-	$fsp_post_on_ig    = FSP_Meta::get_instagram_url( $fsp_id );
-
 	/*
 	 * Riferimento che il visitatore deve citare per farsi capire: il
 	 * codice pezzo se c'è, altrimenti il titolo. È il testo che il
@@ -50,17 +46,10 @@ while ( have_posts() ) :
 	 */
 	$fsp_reference = $fsp_codice ? $fsp_codice : get_the_title();
 
-	$fsp_whatsapp_url = '';
-
-	if ( $fsp_whatsapp ) {
-		$fsp_whatsapp_url = 'https://wa.me/' . $fsp_whatsapp . '?text=' . rawurlencode(
-			sprintf(
-				/* translators: %s: codice o titolo del pezzo. */
-				__( 'Ciao! Vorrei informazioni su: %s', 'francystore-portfolio' ),
-				$fsp_reference
-			)
-		);
-	}
+	// Quali pulsanti mostrare lo decide FSP_Meta, che valuta le tre fonti
+	// (link del pezzo, profilo e WhatsApp dalle impostazioni) una per una.
+	$fsp_contacts = FSP_Meta::get_contact_links( $fsp_id, $fsp_reference );
+	$fsp_needs_copy_hint = (bool) array_filter( wp_list_pluck( $fsp_contacts, 'copy' ) );
 
 	$fsp_prev = get_previous_post();
 	$fsp_next = get_next_post();
@@ -205,72 +194,45 @@ while ( have_posts() ) :
 						</div>
 					<?php endif; ?>
 
-					<?php if ( $fsp_instagram_url || $fsp_whatsapp_url ) : ?>
-						<div class="fsp-panel__rule"></div>
-						<div class="fsp-contact">
-							<div class="fsp-contact__title"><?php esc_html_e( 'Ti interessa un pezzo così?', 'francystore-portfolio' ); ?></div>
-
-							<?php if ( $fsp_post_on_ig ) : ?>
-								<?php
-								/*
-								 * Sta in cima e non in fondo: il post con foto,
-								 * caption e commenti convince più di un pulsante
-								 * di contatto, e chi ci arriva è già dentro
-								 * Instagram nel momento in cui decide di scrivere.
-								 */
-								?>
-								<a class="fsp-contact__btn fsp-contact__btn--post"
-									href="<?php echo esc_url( $fsp_post_on_ig ); ?>"
-									target="_blank"
-									rel="noopener">
-									<?php esc_html_e( 'Guardalo su Instagram', 'francystore-portfolio' ); ?>
-								</a>
-							<?php endif; ?>
-
-							<?php if ( $fsp_instagram_url ) : ?>
-								<?php
-								/*
-								 * Instagram non permette di precompilare il testo del
-								 * messaggio: nessun link, di nessun tipo, apre la chat
-								 * con una frase già scritta. Il pulsante copia allora
-								 * il riferimento del pezzo negli appunti e apre il
-								 * profilo, così al visitatore resta solo da incollare
-								 * e a te arriva un messaggio che dice di quale oggetto
-								 * si parla.
-								 */
-								?>
-								<a class="fsp-contact__btn fsp-contact__btn--ig"
-									href="<?php echo esc_url( $fsp_instagram_url ); ?>"
-									target="_blank"
-									rel="noopener"
-									data-fsp-copy="<?php echo esc_attr( $fsp_reference ); ?>">
-									<?php esc_html_e( 'Scrivimi su Instagram', 'francystore-portfolio' ); ?>
-								</a>
-							<?php endif; ?>
-
-							<?php if ( $fsp_whatsapp_url ) : ?>
-								<a class="fsp-contact__btn fsp-contact__btn--wa"
-									href="<?php echo esc_url( $fsp_whatsapp_url ); ?>"
-									target="_blank"
-									rel="noopener">
-									<?php esc_html_e( 'Scrivimi su WhatsApp', 'francystore-portfolio' ); ?>
-								</a>
-							<?php endif; ?>
-
-							<?php if ( $fsp_instagram_url ) : ?>
-								<p class="fsp-contact__hint">
-									<?php
-									printf(
-										/* translators: %s: codice o titolo del pezzo. */
-										esc_html__( 'Cita il riferimento %s nel messaggio: il pulsante te lo copia già negli appunti.', 'francystore-portfolio' ),
-										'<strong>' . esc_html( $fsp_reference ) . '</strong>'
-									);
-									?>
-								</p>
-							<?php endif; ?>
-						</div>
-					<?php endif; ?>
 				</section>
+
+				<?php
+				/*
+				 * I contatti stanno in un riquadro proprio, sotto la scheda:
+				 * dentro al pannello, in coda alle specifiche, il pulsante si
+				 * confondeva con i dati tecnici invece di leggersi come
+				 * l'invito ad agire che è.
+				 */
+				?>
+				<?php if ( $fsp_contacts ) : ?>
+					<section class="fsp-contact">
+						<div class="fsp-contact__title"><?php esc_html_e( 'Ti interessa un pezzo così?', 'francystore-portfolio' ); ?></div>
+
+						<?php foreach ( $fsp_contacts as $fsp_contact ) : ?>
+							<a class="fsp-contact__btn fsp-contact__btn--<?php echo esc_attr( $fsp_contact['variant'] ); ?>"
+								href="<?php echo esc_url( $fsp_contact['url'] ); ?>"
+								target="_blank"
+								rel="noopener"
+								<?php if ( $fsp_contact['copy'] ) : ?>
+									data-fsp-copy="<?php echo esc_attr( $fsp_contact['copy'] ); ?>"
+								<?php endif; ?>>
+								<?php echo esc_html( $fsp_contact['label'] ); ?>
+							</a>
+						<?php endforeach; ?>
+
+						<?php if ( $fsp_needs_copy_hint ) : ?>
+							<p class="fsp-contact__hint">
+								<?php
+								printf(
+									/* translators: %s: codice o titolo del pezzo. */
+									esc_html__( 'Cita il riferimento %s nel messaggio: il pulsante te lo copia già negli appunti.', 'francystore-portfolio' ),
+									'<strong>' . esc_html( $fsp_reference ) . '</strong>'
+								);
+								?>
+							</p>
+						<?php endif; ?>
+					</section>
+				<?php endif; ?>
 
 				<?php // La descrizione estesa segue la scheda tecnica, nella stessa colonna. ?>
 				<?php if ( trim( (string) get_the_content() ) ) : ?>
