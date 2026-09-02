@@ -109,6 +109,22 @@ scatti di seguito senza chiudere e riaprire una finestra ogni volta. La
 principale sta anche fra le miniature, altrimenti dopo il primo click non ci si
 tornerebbe più.
 
+**Il pannello dei filtri parte chiuso, ma è il JS a chiuderlo, non il PHP.**
+Se lo chiudesse il PHP con `hidden`, senza JavaScript resterebbe irraggiungibile
+dietro a un pulsante inerte. Resta aperto quando si arriva con filtri già attivi
+da querystring. Il numero sul pulsante è l'unico segnale, a pannello chiuso, che
+la griglia non sta mostrando tutto — per questo conteggio pezzi e "azzera" stanno
+fuori dal pannello.
+
+**Logo dell'intestazione al posto del titolo, con altezza dalle impostazioni.**
+L'altezza passa da una variabile CSS inline (`--fsp-logo-height`) e non da un
+`height` diretto, così il CSS può ricalcolarla su schermo stretto. Senza logo si
+stampa il titolo scritto: l'intestazione non è mai vuota.
+
+**Gli sfondi sfumano in basso con `mask-image`, non con un rettangolo
+sovrapposto.** La maschera agisce sull'immagine, quindi la dissolvenza finisce
+esattamente dove finisce la foto, qualunque sia l'altezza del box.
+
 **Gli sfondi hanno un box di altezza fissa e usano `object-fit: cover` con
 `object-position: center`.** Lasciando decidere all'immagine, una foto verticale
 si allunga per mezza pagina e una panoramica lascia una striscia: il formato del

@@ -14,8 +14,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$fsp_settings = FSP_Settings::get_all();
-$fsp_home_bg  = FSP_Settings::get_home_background_id();
+$fsp_settings    = FSP_Settings::get_all();
+$fsp_home_bg     = FSP_Settings::get_home_background_id();
+$fsp_logo_id     = FSP_Settings::get_header_logo_id();
+$fsp_logo_height = FSP_Settings::get_header_logo_height();
+$fsp_logo_url    = $fsp_logo_id ? wp_get_attachment_image_url( $fsp_logo_id, 'full' ) : '';
 
 /*
  * URL diretto invece di wp_get_attachment_image(): quella funzione
@@ -114,7 +117,26 @@ if ( is_tax( FSP_Taxonomies::SECTION ) ) {
 	<div class="fsp-archive__inner">
 
 		<header class="fsp-archive__header">
-			<h1 class="fsp-archive__title fsp-display"><?php echo esc_html( $fsp_settings['header_title'] ); ?></h1>
+			<?php
+			/*
+			 * Il logo sostituisce il titolo, non lo affianca: due
+			 * intestazioni una sopra l'altra si farebbero concorrenza. Se
+			 * il logo non c'è resta il titolo scritto, così l'intestazione
+			 * non è mai vuota.
+			 *
+			 * L'altezza passa da una variabile CSS inline invece che da un
+			 * height diretto: il CSS può così usarla anche per le
+			 * proporzioni su schermo stretto, dove il logo va rimpicciolito.
+			 */
+			?>
+			<?php if ( $fsp_logo_url ) : ?>
+				<h1 class="fsp-archive__logo" style="--fsp-logo-height: <?php echo esc_attr( (string) $fsp_logo_height ); ?>px">
+					<img src="<?php echo esc_url( $fsp_logo_url ); ?>"
+						alt="<?php echo esc_attr( $fsp_settings['header_title'] ? $fsp_settings['header_title'] : get_bloginfo( 'name' ) ); ?>">
+				</h1>
+			<?php else : ?>
+				<h1 class="fsp-archive__title fsp-display"><?php echo esc_html( $fsp_settings['header_title'] ); ?></h1>
+			<?php endif; ?>
 			<?php if ( $fsp_settings['header_subtitle'] ) : ?>
 				<div class="fsp-archive__subtitle"><?php echo esc_html( $fsp_settings['header_subtitle'] ); ?></div>
 			<?php endif; ?>
@@ -127,6 +149,31 @@ if ( is_tax( FSP_Taxonomies::SECTION ) ) {
 
 		<?php if ( $fsp_sections || $fsp_types ) : ?>
 			<div class="fsp-filters" data-fsp-filters>
+
+				<?php
+				/*
+				 * I filtri partono chiusi: a pagina aperta il portfolio deve
+				 * mostrare i pezzi, non un pannello di comandi. Il pulsante
+				 * porta il numero di filtri attivi, così a pannello chiuso si
+				 * capisce comunque che la griglia è filtrata.
+				 *
+				 * L'attributo hidden è messo dal PHP e tolto dal JS: senza
+				 * JavaScript il pannello resta aperto e utilizzabile invece
+				 * di sparire per sempre dietro a un pulsante che non
+				 * risponde.
+				 */
+				?>
+				<button type="button"
+					class="fsp-filters__toggle"
+					data-fsp-filters-toggle
+					aria-expanded="true"
+					aria-controls="fsp-filters-panel">
+					<span class="fsp-filters__toggle-label"><?php esc_html_e( 'Filtra', 'francystore-portfolio' ); ?></span>
+					<span class="fsp-filters__badge" data-fsp-filters-badge hidden></span>
+					<span class="fsp-filters__chevron" aria-hidden="true"></span>
+				</button>
+
+				<div class="fsp-filters__panel" id="fsp-filters-panel" data-fsp-filters-panel>
 
 				<?php if ( $fsp_sections ) : ?>
 					<div class="fsp-filters__group" role="group" aria-label="<?php esc_attr_e( 'Filtra per sezione', 'francystore-portfolio' ); ?>">
@@ -165,6 +212,9 @@ if ( is_tax( FSP_Taxonomies::SECTION ) ) {
 					</div>
 				<?php endif; ?>
 
+				</div>
+
+				<?php // Fuori dal pannello: il conteggio dei pezzi serve anche a filtri chiusi. ?>
 				<div class="fsp-filters__bar">
 					<span class="fsp-filters__count" data-fsp-count aria-live="polite"></span>
 					<button type="button" class="fsp-filters__reset" data-fsp-reset hidden>

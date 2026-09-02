@@ -53,6 +53,10 @@
 		var backgrounds = parseJSON( root.getAttribute( 'data-section-backgrounds' ) ) || {};
 		var homeBackground = root.getAttribute( 'data-home-background' ) || '';
 
+		var toggleEl = document.querySelector( '[data-fsp-filters-toggle]' );
+		var panelEl = document.querySelector( '[data-fsp-filters-panel]' );
+		var badgeEl = document.querySelector( '[data-fsp-filters-badge]' );
+
 		// Vero solo fino al primo apply(), per non animare il caricamento.
 		var isFirstRun = true;
 
@@ -204,10 +208,18 @@
 				emptyEl.hidden = visible > 0;
 			}
 
-			var hasFilters = selected.section.length > 0 || selected.type.length > 0;
+			var active = selected.section.length + selected.type.length;
+			var hasFilters = active > 0;
 
 			if ( resetEl ) {
 				resetEl.hidden = ! hasFilters;
+			}
+
+			// A pannello chiuso il numero sul pulsante è l'unico indizio che
+			// la griglia non sta mostrando tutto.
+			if ( badgeEl ) {
+				badgeEl.textContent = active;
+				badgeEl.hidden = ! hasFilters;
 			}
 
 			updateBackground();
@@ -387,6 +399,29 @@
 					selected[ type ].push( chip.getAttribute( 'data-value' ) );
 				}
 			} );
+		}
+
+		/*
+		 * Il pannello si chiude qui e non nel PHP: se il JavaScript non
+		 * gira, l'attributo hidden non verrebbe mai tolto e i filtri
+		 * resterebbero irraggiungibili dietro a un pulsante inerte.
+		 *
+		 * Resta aperto quando si arriva con dei filtri già attivi (link
+		 * condiviso, ritorno da una scheda): in quel caso la prima cosa da
+		 * capire è quali filtri siano in funzione.
+		 */
+		if ( toggleEl && panelEl ) {
+			setPanel( selected.section.length + selected.type.length > 0 );
+
+			toggleEl.addEventListener( 'click', function () {
+				setPanel( 'true' !== toggleEl.getAttribute( 'aria-expanded' ) );
+			} );
+		}
+
+		function setPanel( open ) {
+			panelEl.hidden = ! open;
+			toggleEl.setAttribute( 'aria-expanded', open ? 'true' : 'false' );
+			toggleEl.classList.toggle( 'is-open', open );
 		}
 
 		// Allinea i chip allo stato appena letto.

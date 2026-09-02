@@ -9,7 +9,10 @@ a un pezzo scrive su Instagram.
 ## Cosa fa
 
 - **Archivio filtrabile in tempo reale** — sezioni e tipologie a selezione
-  multipla, con riordino animato delle schede e nessun ricaricamento di pagina
+  multipla, con riordino animato delle schede e nessun ricaricamento di pagina.
+  Il pannello dei filtri sta chiuso finché non serve
+- **Logo personalizzabile** — caricabile dalle impostazioni, con altezza
+  regolabile in pixel
 - **Pagina indipendente dal tema** — il portfolio ha il suo layout completo,
   cambiare tema non lo tocca
 - **Sfondi a più livelli** — ogni pezzo può avere il suo sfondo, altrimenti

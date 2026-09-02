@@ -40,6 +40,8 @@ class FSP_Settings {
 			'header_title'           => 'FRANCYSTORE3D',
 			'header_subtitle'        => '— PORTFOLIO —',
 			'header_tag'             => 'PEZZI REALIZZATI A MANO',
+			'header_logo'            => 0,
+			'header_logo_height'     => 90,
 			'home_background_image'  => 0,
 			'instagram_handle'       => '',
 			'whatsapp_number'        => '',
@@ -100,6 +102,31 @@ class FSP_Settings {
 	 */
 	public static function get_home_background_id() {
 		return (int) self::get( 'home_background_image' );
+	}
+
+	/**
+	 * ID del logo mostrato in cima al portfolio al posto del titolo.
+	 *
+	 * @return int 0 se non impostato: in quel caso si stampa il titolo.
+	 */
+	public static function get_header_logo_id() {
+		return (int) self::get( 'header_logo' );
+	}
+
+	/**
+	 * Altezza del logo in pixel.
+	 *
+	 * Si imposta l'altezza e non la larghezza perché è l'altezza a
+	 * decidere quanto spazio verticale il logo si prende prima della
+	 * griglia; la larghezza segue da sé, quali che siano le proporzioni
+	 * del file caricato.
+	 *
+	 * @return int
+	 */
+	public static function get_header_logo_height() {
+		$height = (int) self::get( 'header_logo_height' );
+
+		return $height > 0 ? $height : 90;
 	}
 
 	/**
@@ -279,6 +306,17 @@ class FSP_Settings {
 		}
 
 		$output['home_background_image'] = isset( $input['home_background_image'] ) ? absint( $input['home_background_image'] ) : 0;
+		$output['header_logo']           = isset( $input['header_logo'] ) ? absint( $input['header_logo'] ) : 0;
+
+		/*
+		 * Altezza del logo entro limiti ragionevoli: sotto i 20px sarebbe
+		 * illeggibile e sopra i 400 spingerebbe la griglia fuori dalla
+		 * prima schermata. Un valore fuori scala viene riportato dentro
+		 * invece di essere rifiutato, così un refuso non blocca il
+		 * salvataggio di tutto il resto.
+		 */
+		$logo_height               = isset( $input['header_logo_height'] ) ? absint( $input['header_logo_height'] ) : 0;
+		$output['header_logo_height'] = $logo_height ? min( 400, max( 20, $logo_height ) ) : 90;
 		$output['whatsapp_number']       = isset( $input['whatsapp_number'] ) ? preg_replace( '/\D+/', '', (string) $input['whatsapp_number'] ) : '';
 		$output['attribute_suggestions']  = isset( $input['attribute_suggestions'] ) ? sanitize_textarea_field( $input['attribute_suggestions'] ) : '';
 
@@ -297,6 +335,8 @@ class FSP_Settings {
 		$archive_link  = get_post_type_archive_link( FSP_CPT::POST_TYPE );
 		$background_id = (int) $settings['home_background_image'];
 		$background    = $background_id ? wp_get_attachment_image_url( $background_id, 'medium' ) : '';
+		$logo_id       = (int) $settings['header_logo'];
+		$logo          = $logo_id ? wp_get_attachment_image_url( $logo_id, 'medium' ) : '';
 		?>
 		<div class="wrap fsp-settings">
 			<h1><?php esc_html_e( 'Impostazioni Portfolio', 'francystore-portfolio' ); ?></h1>
@@ -335,6 +375,51 @@ class FSP_Settings {
 				<table class="form-table" role="presentation">
 					<tr>
 						<th scope="row">
+							<label><?php esc_html_e( 'Logo', 'francystore-portfolio' ); ?></label>
+						</th>
+						<td>
+							<div class="fsp-media" data-fsp-media>
+								<div class="fsp-media__preview" data-fsp-media-preview>
+									<?php if ( $logo ) : ?>
+										<img src="<?php echo esc_url( $logo ); ?>" alt="">
+									<?php endif; ?>
+								</div>
+								<input type="hidden"
+									name="<?php echo esc_attr( self::OPTION_NAME ); ?>[header_logo]"
+									value="<?php echo esc_attr( (string) $logo_id ); ?>"
+									data-fsp-media-input>
+								<button type="button" class="button" data-fsp-media-select>
+									<?php esc_html_e( 'Scegli immagine', 'francystore-portfolio' ); ?>
+								</button>
+								<button type="button" class="button-link fsp-media__remove" data-fsp-media-remove<?php echo $logo_id ? '' : ' hidden'; ?>>
+									<?php esc_html_e( 'Rimuovi', 'francystore-portfolio' ); ?>
+								</button>
+							</div>
+							<p class="description">
+								<?php esc_html_e( 'Compare in cima al portfolio al posto del titolo scritto. Se non lo carichi viene mostrato il titolo qui sotto. Meglio un PNG con lo sfondo trasparente: la pagina è scura.', 'francystore-portfolio' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<label for="fsp-logo-height"><?php esc_html_e( 'Altezza del logo', 'francystore-portfolio' ); ?></label>
+						</th>
+						<td>
+							<input type="number"
+								id="fsp-logo-height"
+								class="small-text"
+								min="20"
+								max="400"
+								step="1"
+								name="<?php echo esc_attr( self::OPTION_NAME ); ?>[header_logo_height]"
+								value="<?php echo esc_attr( (string) $settings['header_logo_height'] ); ?>"> px
+							<p class="description">
+								<?php esc_html_e( 'Si imposta l\'altezza e non la larghezza: è l\'altezza a decidere quanto spazio il logo si prende prima della griglia, e la larghezza segue da sé qualunque siano le proporzioni del file. Fra 20 e 400 px.', 'francystore-portfolio' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
 							<label for="fsp-header-title"><?php esc_html_e( 'Titolo', 'francystore-portfolio' ); ?></label>
 						</th>
 						<td>
@@ -343,6 +428,9 @@ class FSP_Settings {
 								class="regular-text"
 								name="<?php echo esc_attr( self::OPTION_NAME ); ?>[header_title]"
 								value="<?php echo esc_attr( $settings['header_title'] ); ?>">
+							<p class="description">
+								<?php esc_html_e( 'Mostrato solo se non hai caricato un logo.', 'francystore-portfolio' ); ?>
+							</p>
 						</td>
 					</tr>
 					<tr>
