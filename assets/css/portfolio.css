@@ -42,7 +42,18 @@ body.fsp-body * {
 	box-sizing: border-box;
 }
 
-body.fsp-body img {
+/*
+ * Regola di comodo per le immagini dentro ai testi, con specificità
+ * azzerata da :where().
+ *
+ * Scritta come "body.fsp-body img" pesava (0,1,2) e batteva qualsiasi
+ * regola a classe singola come ".fsp-card__media img" (0,1,1): il suo
+ * height:auto annullava tutti gli height:100% pensati per far riempire
+ * il riquadro alle foto, che restavano alte quanto volevano lasciando
+ * una banda vuota sotto. Con :where() attorno al body il peso scende a
+ * (0,0,1) e basta una classe per avere la meglio.
+ */
+:where(body.fsp-body) img {
 	max-width: 100%;
 	height: auto;
 }
@@ -377,9 +388,11 @@ body.fsp-no-scroll {
 }
 
 .fsp-card__media img {
+	display: block;
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
+	object-position: center;
 	/* Le foto partono desaturate e riprendono colore al passaggio del
 	   mouse: tiene la griglia coerente anche con scatti fatti in
 	   condizioni di luce diverse. */
