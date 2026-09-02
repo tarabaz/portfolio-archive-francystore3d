@@ -103,6 +103,22 @@ due volte.
 **Priorità dello sfondo della scheda: pezzo → sezione → generale.** La logica
 sta in `FSP_Meta::get_background_id()`, un punto solo per tutti i template.
 
+**Le miniature scambiano l'immagine grande, non aprono il pieno schermo.**
+Il pieno schermo è il secondo click, sulla grande: così si confrontano più
+scatti di seguito senza chiudere e riaprire una finestra ogni volta. La
+principale sta anche fra le miniature, altrimenti dopo il primo click non ci si
+tornerebbe più.
+
+**Gli sfondi hanno un box di altezza fissa e usano `object-fit: cover` con
+`object-position: center`.** Lasciando decidere all'immagine, una foto verticale
+si allunga per mezza pagina e una panoramica lascia una striscia: il formato del
+file finirebbe per decidere l'impaginazione.
+
+**Link Instagram del pezzo validato sul dominio** in
+`FSP_Meta::sanitize_instagram_url()`: accetta solo instagram.com / instagr.am,
+aggiunge lo schema se manca, e su valore scartato lascia un avviso via transient
+(fra salvataggio e schermata c'è un redirect, una variabile non sopravviverebbe).
+
 **Sezioni e tipologie nella scheda sono etichette, non link.** Dalla scheda si
 vuole che il visitatore legga e poi scriva, non che torni alla griglia.
 

@@ -19,7 +19,8 @@ a un pezzo scrive su Instagram.
 - **Compilazione per campi** — nessun editor da impaginare: titolo, descrizione,
   immagini e dati, e basta
 - **Contatto Instagram** — con il codice del pezzo copiato negli appunti, così
-  chi scrive ha già il riferimento pronto
+  chi scrive ha già il riferimento pronto, più il link diretto al post del pezzo
+  quando c'è
 
 ## Installazione
 
@@ -47,6 +48,7 @@ impostazioni.
 | Altre immagini | box *Scheda del pezzo*, accanto alla principale |
 | Codice, materiale, altezza, tempo, anno | box *Scheda del pezzo*, sezione *Dati base* |
 | Alimentazione, illuminazione, scala… | box *Scheda del pezzo*, tabella *Altri dati* |
+| Link al post Instagram | box *Scheda del pezzo*, sotto i dati base |
 | Sfondo della scheda | box *Scheda del pezzo*, in fondo |
 | Sezione e tipologia | colonna destra, a spunte |
 

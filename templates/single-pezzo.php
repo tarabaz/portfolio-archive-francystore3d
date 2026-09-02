@@ -20,7 +20,6 @@ while ( have_posts() ) :
 	$fsp_id       = get_the_ID();
 	$fsp_codice   = FSP_Meta::get( $fsp_id, 'codice' );
 	$fsp_rows     = FSP_Meta::get_spec_rows( $fsp_id );
-	$fsp_gallery  = FSP_Meta::get_gallery( $fsp_id );
 	$fsp_sections = get_the_terms( $fsp_id, FSP_Taxonomies::SECTION );
 	$fsp_types    = get_the_terms( $fsp_id, FSP_Taxonomies::TAG );
 
@@ -28,24 +27,13 @@ while ( have_posts() ) :
 	$fsp_types    = is_wp_error( $fsp_types ) || ! $fsp_types ? array() : $fsp_types;
 
 	/*
-	 * Immagine grande in cima: la copertina del pezzo, o la prima della
-	 * galleria se la copertina non è stata impostata.
+	 * Tutte le immagini in un elenco solo, con la principale in testa. La
+	 * principale compare anche fra le miniature: cliccandone una si
+	 * scambia l'immagine grande, e senza la sua non si potrebbe più
+	 * tornare indietro dopo il primo click.
 	 */
-	$fsp_main_image = FSP_Meta::get_main_image_id( $fsp_id );
-
-	/*
-	 * Quando la grande arriva dalla galleria va tolta dalle miniature,
-	 * altrimenti la stessa foto comparirebbe due volte nella stessa
-	 * schermata.
-	 */
-	$fsp_gallery = array_values(
-		array_filter(
-			$fsp_gallery,
-			static function ( $image_id ) use ( $fsp_main_image ) {
-				return (int) $image_id !== (int) $fsp_main_image;
-			}
-		)
-	);
+	$fsp_images     = FSP_Meta::get_images( $fsp_id );
+	$fsp_main_image = $fsp_images ? $fsp_images[0] : 0;
 
 	// Sfondo: pezzo, poi sezione, poi generale. La scelta sta in FSP_Meta.
 	$fsp_bg_id  = FSP_Meta::get_background_id( $fsp_id );
@@ -53,6 +41,7 @@ while ( have_posts() ) :
 
 	$fsp_instagram_url = FSP_Settings::get_instagram_url();
 	$fsp_whatsapp      = FSP_Settings::get_whatsapp_number();
+	$fsp_post_on_ig    = FSP_Meta::get_instagram_url( $fsp_id );
 
 	/*
 	 * Riferimento che il visitatore deve citare per farsi capire: il
@@ -112,45 +101,57 @@ while ( have_posts() ) :
 
 		<div class="fsp-single__cols">
 
-			<?php // Colonna sinistra: immagine principale e miniature. ?>
+			<?php // Colonna sinistra: immagine grande e miniature che la scambiano. ?>
 			<div class="fsp-single__media-col">
 
 				<?php if ( $fsp_main_image ) : ?>
+					<?php
+					$fsp_main_large = wp_get_attachment_image_url( $fsp_main_image, 'large' );
+					$fsp_main_full  = wp_get_attachment_image_url( $fsp_main_image, 'full' );
+					?>
 					<figure class="fsp-single__media">
+						<?php
+						/*
+						 * Due passaggi voluti: le miniature cambiano la foto qui
+						 * dentro, e solo un click su questa la apre a tutto
+						 * schermo. Aprendo il pieno schermo già dalla miniatura,
+						 * per confrontare due scatti bisognerebbe chiudere e
+						 * riaprire ogni volta.
+						 */
+						?>
 						<button type="button"
 							class="fsp-single__zoom"
-							data-fsp-lightbox="<?php echo esc_url( (string) wp_get_attachment_image_url( $fsp_main_image, 'full' ) ); ?>"
-							aria-label="<?php esc_attr_e( 'Ingrandisci immagine', 'francystore-portfolio' ); ?>">
-							<?php
-							echo wp_get_attachment_image( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- markup generato dal core.
-								$fsp_main_image,
-								'large',
-								false,
-								array( 'alt' => the_title_attribute( array( 'echo' => false ) ) )
-							);
-							?>
+							data-fsp-zoom
+							data-full="<?php echo esc_url( (string) $fsp_main_full ); ?>"
+							aria-label="<?php esc_attr_e( 'Apri a tutto schermo', 'francystore-portfolio' ); ?>">
+							<img src="<?php echo esc_url( (string) $fsp_main_large ); ?>"
+								alt="<?php echo esc_attr( the_title_attribute( array( 'echo' => false ) ) ); ?>"
+								data-fsp-main-image>
 						</button>
 					</figure>
 				<?php endif; ?>
 
-				<?php if ( $fsp_gallery ) : ?>
+				<?php if ( count( $fsp_images ) > 1 ) : ?>
 					<ul class="fsp-single__gallery">
-						<?php foreach ( $fsp_gallery as $fsp_image_id ) : ?>
+						<?php foreach ( $fsp_images as $fsp_index => $fsp_image_id ) : ?>
 							<?php
+							$fsp_large = wp_get_attachment_image_url( $fsp_image_id, 'large' );
 							$fsp_full  = wp_get_attachment_image_url( $fsp_image_id, 'full' );
 							$fsp_thumb = wp_get_attachment_image( $fsp_image_id, 'medium', false, array( 'loading' => 'lazy' ) );
 
 							// Allegato cancellato dalla Libreria Media: si salta,
-							// invece di lasciare un riquadro vuoto nella galleria.
-							if ( ! $fsp_full || ! $fsp_thumb ) {
+							// invece di lasciare un riquadro vuoto nella striscia.
+							if ( ! $fsp_large || ! $fsp_thumb ) {
 								continue;
 							}
 							?>
 							<li class="fsp-single__gallery-item">
 								<button type="button"
-									class="fsp-single__gallery-btn"
-									data-fsp-lightbox="<?php echo esc_url( $fsp_full ); ?>"
-									aria-label="<?php esc_attr_e( 'Ingrandisci immagine', 'francystore-portfolio' ); ?>">
+									class="fsp-single__gallery-btn<?php echo 0 === $fsp_index ? ' is-active' : ''; ?>"
+									data-fsp-thumb
+									data-large="<?php echo esc_url( $fsp_large ); ?>"
+									data-full="<?php echo esc_url( (string) $fsp_full ); ?>"
+									aria-label="<?php esc_attr_e( 'Mostra questa immagine', 'francystore-portfolio' ); ?>">
 									<?php echo $fsp_thumb; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- markup generato dal core. ?>
 								</button>
 							</li>
@@ -209,6 +210,23 @@ while ( have_posts() ) :
 						<div class="fsp-contact">
 							<div class="fsp-contact__title"><?php esc_html_e( 'Ti interessa un pezzo così?', 'francystore-portfolio' ); ?></div>
 
+							<?php if ( $fsp_post_on_ig ) : ?>
+								<?php
+								/*
+								 * Sta in cima e non in fondo: il post con foto,
+								 * caption e commenti convince più di un pulsante
+								 * di contatto, e chi ci arriva è già dentro
+								 * Instagram nel momento in cui decide di scrivere.
+								 */
+								?>
+								<a class="fsp-contact__btn fsp-contact__btn--post"
+									href="<?php echo esc_url( $fsp_post_on_ig ); ?>"
+									target="_blank"
+									rel="noopener">
+									<?php esc_html_e( 'Guardalo su Instagram', 'francystore-portfolio' ); ?>
+								</a>
+							<?php endif; ?>
+
 							<?php if ( $fsp_instagram_url ) : ?>
 								<?php
 								/*
@@ -253,24 +271,25 @@ while ( have_posts() ) :
 						</div>
 					<?php endif; ?>
 				</section>
+
+				<?php // La descrizione estesa segue la scheda tecnica, nella stessa colonna. ?>
+				<?php if ( trim( (string) get_the_content() ) ) : ?>
+					<section class="fsp-note">
+						<div class="fsp-note__head">
+							<?php esc_html_e( 'Note di lavorazione', 'francystore-portfolio' ); ?>
+							<span class="fsp-note__rule"></span>
+							<?php if ( $fsp_codice ) : ?>
+								<span><?php echo esc_html( $fsp_codice ); ?></span>
+							<?php endif; ?>
+						</div>
+						<div class="fsp-note__text">
+							<?php the_content(); ?>
+						</div>
+					</section>
+				<?php endif; ?>
 			</div>
 
 		</div>
-
-		<?php if ( trim( (string) get_the_content() ) ) : ?>
-			<section class="fsp-note">
-				<div class="fsp-note__head">
-					<?php esc_html_e( 'Note di lavorazione', 'francystore-portfolio' ); ?>
-					<span class="fsp-note__rule"></span>
-					<?php if ( $fsp_codice ) : ?>
-						<span><?php echo esc_html( $fsp_codice ); ?></span>
-					<?php endif; ?>
-				</div>
-				<div class="fsp-note__text">
-					<?php the_content(); ?>
-				</div>
-			</section>
-		<?php endif; ?>
 
 		<?php if ( $fsp_prev || $fsp_next ) : ?>
 			<nav class="fsp-pager" aria-label="<?php esc_attr_e( 'Altri pezzi', 'francystore-portfolio' ); ?>">

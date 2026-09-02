@@ -3,7 +3,7 @@
  * Plugin Name:       FrancyStore Portfolio
  * Plugin URI:        https://francystore3d.com
  * Description:       Portfolio visivo dei pezzi realizzati da FrancyStore3D (action figure, lampade, diorami, stand). Archivio filtrabile in tempo reale, indipendente dal tema. Nessun e-commerce: il contatto avviene su Instagram.
- * Version:           1.1.0
+ * Version:           1.2.0
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            FrancyStore3D
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * fondo alla pagina impostazioni, per verificare a colpo d'occhio che
  * un aggiornamento sia stato effettivamente caricato dal browser.
  */
-define( 'FSP_VERSION', '1.1.0' );
+define( 'FSP_VERSION', '1.2.0' );
 
 /** Percorso assoluto della cartella del plugin, con trailing slash. */
 define( 'FSP_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );

@@ -402,6 +402,63 @@
 	}
 
 	/* ------------------------------------------------------------------
+	 * Galleria della scheda: le miniature scambiano l'immagine grande
+	 * ------------------------------------------------------------------ */
+
+	/**
+	 * Cliccare una miniatura porta quella foto nel riquadro grande, non
+	 * a tutto schermo. Il pieno schermo resta un secondo passaggio, dal
+	 * click sulla grande: così si possono confrontare più scatti di
+	 * seguito senza aprire e chiudere una finestra ogni volta.
+	 */
+	function initPieceGallery() {
+		var main = document.querySelector( '[data-fsp-main-image]' );
+		var zoom = document.querySelector( '[data-fsp-zoom]' );
+		var thumbs = Array.prototype.slice.call( document.querySelectorAll( '[data-fsp-thumb]' ) );
+
+		if ( ! main || ! zoom || ! thumbs.length ) {
+			return;
+		}
+
+		thumbs.forEach( function ( thumb ) {
+			thumb.addEventListener( 'click', function () {
+				var large = thumb.getAttribute( 'data-large' );
+				var full = thumb.getAttribute( 'data-full' );
+
+				if ( ! large || main.getAttribute( 'src' ) === large ) {
+					return;
+				}
+
+				/*
+				 * L'immagine si scambia solo a caricamento avvenuto:
+				 * assegnando subito il nuovo src, sui file grandi si
+				 * vedrebbe il riquadro vuoto per un istante prima che la
+				 * foto compaia.
+				 */
+				var loader = new Image();
+
+				loader.onload = function () {
+					main.classList.add( 'is-swapping' );
+
+					window.setTimeout( function () {
+						main.src = large;
+						// Il pieno schermo deve aprire la foto che si sta
+						// guardando adesso, non quella di partenza.
+						zoom.setAttribute( 'data-full', full || large );
+						main.classList.remove( 'is-swapping' );
+					}, 120 );
+				};
+
+				loader.src = large;
+
+				thumbs.forEach( function ( other ) {
+					other.classList.toggle( 'is-active', other === thumb );
+				} );
+			} );
+		} );
+	}
+
+	/* ------------------------------------------------------------------
 	 * Ingrandimento foto
 	 * ------------------------------------------------------------------ */
 
@@ -450,11 +507,11 @@
 		}
 
 		document.addEventListener( 'click', function ( event ) {
-			var trigger = event.target.closest ? event.target.closest( '[data-fsp-lightbox]' ) : null;
+			var trigger = event.target.closest ? event.target.closest( '[data-fsp-zoom]' ) : null;
 
 			if ( trigger ) {
 				event.preventDefault();
-				open( trigger.getAttribute( 'data-fsp-lightbox' ), trigger );
+				open( trigger.getAttribute( 'data-full' ), trigger );
 			}
 		} );
 
@@ -549,6 +606,7 @@
 
 	function init() {
 		initFilters();
+		initPieceGallery();
 		initLightbox();
 		initCopy();
 	}

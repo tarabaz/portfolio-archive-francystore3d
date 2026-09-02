@@ -26,6 +26,9 @@ class FSP_Meta {
 	/** Meta con l'ID dell'immagine di sfondo dedicata al pezzo. */
 	const KEY_BACKGROUND = 'fsp_sfondo';
 
+	/** Meta con il link al post Instagram dedicato al pezzo. */
+	const KEY_INSTAGRAM = 'fsp_instagram_post';
+
 	/**
 	 * Campi base, sempre presenti su ogni pezzo.
 	 *
@@ -47,6 +50,21 @@ class FSP_Meta {
 			'tempo'     => __( 'Tempo di realizzazione', 'francystore-portfolio' ),
 			'anno'      => __( 'Anno', 'francystore-portfolio' ),
 		);
+	}
+
+	/**
+	 * Campi che si compilano insieme ai dati base ma che nella scheda
+	 * pubblica non diventano una riga della tabella.
+	 *
+	 * Il codice ha già una riga dedicata sotto al titolo, e il link
+	 * Instagram diventa un pulsante: stamparli anche fra le specifiche
+	 * significherebbe ripetere il primo e mostrare un indirizzo lungo e
+	 * illeggibile al posto del secondo.
+	 *
+	 * @return string[]
+	 */
+	public static function get_fields_excluded_from_specs() {
+		return array( 'codice' );
 	}
 
 	/**
@@ -120,6 +138,94 @@ class FSP_Meta {
 				'auth_callback'     => array( __CLASS__, 'auth_callback' ),
 			)
 		);
+
+		register_post_meta(
+			FSP_CPT::POST_TYPE,
+			self::KEY_INSTAGRAM,
+			array(
+				'type'              => 'string',
+				'single'            => true,
+				'default'           => '',
+				'sanitize_callback' => array( __CLASS__, 'sanitize_instagram_url' ),
+				'show_in_rest'      => false,
+				'auth_callback'     => array( __CLASS__, 'auth_callback' ),
+			)
+		);
+	}
+
+	/**
+	 * Normalizza il link al post Instagram del pezzo.
+	 *
+	 * Accetta solo indirizzi su instagram.com: un campo libero finirebbe
+	 * per ospitare prima o poi un indirizzo incollato male, e il pulsante
+	 * della scheda porterebbe il visitatore chissà dove. Se manca lo
+	 * schema lo si aggiunge, perché copiando a mano capita spesso di
+	 * fermarsi a "instagram.com/p/...".
+	 *
+	 * @param mixed $value Valore grezzo dal form.
+	 * @return string URL valido, stringa vuota se non lo è.
+	 */
+	public static function sanitize_instagram_url( $value ) {
+		$value = trim( (string) $value );
+
+		if ( '' === $value ) {
+			return '';
+		}
+
+		if ( ! preg_match( '#^https?://#i', $value ) ) {
+			$value = 'https://' . ltrim( $value, '/' );
+		}
+
+		$url  = esc_url_raw( $value );
+		$host = wp_parse_url( $url, PHP_URL_HOST );
+
+		if ( ! $host ) {
+			return '';
+		}
+
+		// Confronto sul dominio finale, così valgono anche www.instagram.com
+		// e instagr.am ma non un dominio che contenga il nome per caso.
+		$host = strtolower( $host );
+
+		$allowed = array( 'instagram.com', 'www.instagram.com', 'instagr.am', 'www.instagr.am' );
+
+		return in_array( $host, $allowed, true ) ? $url : '';
+	}
+
+	/**
+	 * Link al post Instagram del pezzo.
+	 *
+	 * @param int $post_id ID del pezzo.
+	 * @return string Vuoto se non impostato.
+	 */
+	public static function get_instagram_url( $post_id ) {
+		return (string) get_post_meta( $post_id, self::KEY_INSTAGRAM, true );
+	}
+
+	/**
+	 * Immagini della scheda, nell'ordine in cui vanno mostrate: prima la
+	 * principale, poi le altre.
+	 *
+	 * La principale entra anche nella striscia delle miniature: le
+	 * miniature scambiano l'immagine grande, e senza la sua non si
+	 * potrebbe più tornare indietro dopo il primo click.
+	 *
+	 * @param int $post_id ID del pezzo.
+	 * @return int[] ID allegato, senza duplicati.
+	 */
+	public static function get_images( $post_id ) {
+		$main   = self::get_main_image_id( $post_id );
+		$images = $main ? array( $main ) : array();
+
+		foreach ( self::get_gallery( $post_id ) as $image_id ) {
+			$image_id = (int) $image_id;
+
+			if ( $image_id && $image_id !== $main ) {
+				$images[] = $image_id;
+			}
+		}
+
+		return $images;
 	}
 
 	/**
@@ -298,10 +404,10 @@ class FSP_Meta {
 	public static function get_spec_rows( $post_id ) {
 		$rows = array();
 
+		$excluded = self::get_fields_excluded_from_specs();
+
 		foreach ( self::get_base_fields() as $key => $label ) {
-			// Il codice pezzo ha già una riga dedicata in cima alla
-			// scheda: ripeterlo qui sarebbe ridondante.
-			if ( 'codice' === $key ) {
+			if ( in_array( $key, $excluded, true ) ) {
 				continue;
 			}
 

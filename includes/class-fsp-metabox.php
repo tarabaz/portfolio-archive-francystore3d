@@ -36,6 +36,7 @@ class FSP_Metabox {
 		add_action( 'save_post_' . FSP_CPT::POST_TYPE, array( __CLASS__, 'save' ), 10, 2 );
 		add_filter( 'wp_insert_post_data', array( __CLASS__, 'inject_description' ), 10, 2 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_editor_assets' ) );
+		add_action( 'admin_notices', array( __CLASS__, 'print_notices' ) );
 	}
 
 	/**
@@ -213,6 +214,21 @@ class FSP_Metabox {
 
 			<p class="fsp-box__hint">
 				<?php esc_html_e( 'Il codice pezzo compare nella scheda pubblica e viene copiato negli appunti dal pulsante di contatto Instagram: serve a farti capire al volo di quale oggetto ti stanno scrivendo.', 'francystore-portfolio' ); ?>
+			</p>
+
+			<p>
+				<label class="fsp-label" for="fsp-field-instagram">
+					<?php esc_html_e( 'Link al post Instagram', 'francystore-portfolio' ); ?>
+				</label>
+				<input type="url"
+					class="widefat"
+					id="fsp-field-instagram"
+					name="<?php echo esc_attr( FSP_Meta::KEY_INSTAGRAM ); ?>"
+					value="<?php echo esc_attr( FSP_Meta::get_instagram_url( $post->ID ) ); ?>"
+					placeholder="https://www.instagram.com/p/XXXXXXXXXXX/">
+			</p>
+			<p class="fsp-box__hint">
+				<?php esc_html_e( 'Il post in cui hai mostrato questo pezzo. Aprilo su Instagram, tocca i tre puntini in alto a destra e scegli "Copia link": incolla qui l\'indirizzo intero. Se lo compili, nella scheda compare il pulsante "Guardalo su Instagram". Vanno bene sia i post (/p/) sia i reel (/reel/).', 'francystore-portfolio' ); ?>
 			</p>
 
 			<hr class="fsp-box__sep">
@@ -517,5 +533,53 @@ class FSP_Metabox {
 		} else {
 			delete_post_meta( $post_id, FSP_Meta::KEY_BACKGROUND );
 		}
+
+		/*
+		 * Il link Instagram passa da una sanitizzazione propria, che oltre
+		 * a validare l'indirizzo controlla che punti davvero a Instagram:
+		 * un valore scartato torna stringa vuota e il pulsante non compare,
+		 * invece di portare il visitatore su un indirizzo sbagliato.
+		 */
+		$instagram_raw = isset( $_POST[ FSP_Meta::KEY_INSTAGRAM ] ) ? wp_unslash( $_POST[ FSP_Meta::KEY_INSTAGRAM ] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitizzato dalla riga sotto.
+		$instagram     = FSP_Meta::sanitize_instagram_url( $instagram_raw );
+
+		if ( $instagram ) {
+			update_post_meta( $post_id, FSP_Meta::KEY_INSTAGRAM, $instagram );
+		} else {
+			delete_post_meta( $post_id, FSP_Meta::KEY_INSTAGRAM );
+
+			// Valore scritto ma scartato: senza avviso sembrerebbe che il
+			// campo non salvi, e si riproverebbe a incollare lo stesso link.
+			if ( '' !== trim( (string) $instagram_raw ) ) {
+				set_transient(
+					'fsp_instagram_notice_' . get_current_user_id(),
+					__( 'Il link Instagram non è stato salvato: deve essere un indirizzo di instagram.com, per esempio https://www.instagram.com/p/XXXXXXXXXXX/', 'francystore-portfolio' ),
+					60
+				);
+			}
+		}
+	}
+
+	/**
+	 * Mostra l'avviso lasciato dal salvataggio quando un link Instagram
+	 * è stato scartato.
+	 *
+	 * Passa da un transient perché fra il salvataggio e la schermata che
+	 * lo mostra c'è un redirect: una variabile non sopravviverebbe.
+	 */
+	public static function print_notices() {
+		$key     = 'fsp_instagram_notice_' . get_current_user_id();
+		$message = get_transient( $key );
+
+		if ( ! $message ) {
+			return;
+		}
+
+		delete_transient( $key );
+
+		printf(
+			'<div class="notice notice-warning is-dismissible"><p>%s</p></div>',
+			esc_html( $message )
+		);
 	}
 }
