@@ -346,10 +346,61 @@
 		} );
 	}
 
+	/* ------------------------------------------------------------------
+	 * Cursori di regolazione del fumo
+	 * ------------------------------------------------------------------ */
+
+	/**
+	 * Tiene allineati il cursore e la casella numerica che gli sta
+	 * accanto.
+	 *
+	 * Servono tutti e due: il cursore per cercare il valore a occhio
+	 * trascinando, la casella per rimettere esattamente il numero che si
+	 * era trovato buono la volta prima. A salvare è sempre la casella,
+	 * che è l'unica ad avere un name.
+	 */
+	function initRanges() {
+		var ranges = document.querySelectorAll( '[data-fsp-range]' );
+
+		Array.prototype.forEach.call( ranges, function ( range ) {
+			var key = range.getAttribute( 'data-fsp-range' );
+			var field = document.querySelector( '[data-fsp-range-value="' + key + '"]' );
+
+			if ( ! field ) {
+				return;
+			}
+
+			range.addEventListener( 'input', function () {
+				field.value = range.value;
+			} );
+
+			field.addEventListener( 'input', function () {
+				var value = parseInt( field.value, 10 );
+
+				if ( isNaN( value ) ) {
+					return;
+				}
+
+				range.value = Math.max( 0, Math.min( 100, value ) );
+			} );
+
+			// Il rientro nei limiti si fa all'uscita dal campo e non mentre
+			// si digita: correggendo a ogni tasto, chi scrive "100"
+			// partendo da "1" se lo vedrebbe cambiare sotto le dita.
+			field.addEventListener( 'blur', function () {
+				var value = parseInt( field.value, 10 );
+
+				field.value = isNaN( value ) ? range.value : Math.max( 0, Math.min( 100, value ) );
+				range.value = field.value;
+			} );
+		} );
+	}
+
 	function init() {
 		initMediaPickers();
 		initGallery();
 		initAttributes();
+		initRanges();
 	}
 
 	if ( 'loading' === document.readyState ) {

@@ -47,6 +47,11 @@ class FSP_Settings {
 			'background_effect_mobile' => '',
 			'logo_smoke'             => '',
 			'smoke_color'            => '#8fb6c8',
+			'smoke_intensity'        => 55,
+			'smoke_opacity'          => 55,
+			'smoke_speed'            => 40,
+			'smoke_size'             => 55,
+			'logo_opacity'           => 100,
 			'instagram_handle'       => '',
 			'whatsapp_number'        => '',
 			'attribute_suggestions'  => "Alimentazione\nTipo illuminazione\nScala\nBase inclusa\nVerniciatura\nPeso\nPersonalizzabile",
@@ -165,6 +170,53 @@ class FSP_Settings {
 		$color = (string) self::get( 'smoke_color' );
 
 		return preg_match( '/^#[0-9a-f]{6}$/i', $color ) ? $color : '#8fb6c8';
+	}
+
+	/**
+	 * Manopole dell'effetto fumo: chiave => etichetta e spiegazione.
+	 *
+	 * Sono tutte in centesimi invece che nelle unità che servono davvero
+	 * (numero di volute, secondi, pixel): così si ragiona in "quanto" e
+	 * non in "quanti", e i valori restano confrontabili fra loro. La
+	 * conversione nelle unità vere la fa il JavaScript.
+	 *
+	 * @return array<string,array{label:string,help:string}>
+	 */
+	public static function get_smoke_controls() {
+		return array(
+			'smoke_intensity' => array(
+				'label' => __( 'Intensità', 'francystore-portfolio' ),
+				'help'  => __( 'Quante volute ci sono. Alzando si infittisce, abbassando resta più rarefatto. È il valore che pesa di più sul lavoro del browser: oltre 80 su uno schermo grande si inizia a sentire.', 'francystore-portfolio' ),
+			),
+			'smoke_opacity'   => array(
+				'label' => __( 'Opacità', 'francystore-portfolio' ),
+				'help'  => __( 'Quanto è marcata ogni voluta. Le volute si sommano fra loro, quindi valori alti tendono a bruciare in bianco dove si sovrappongono.', 'francystore-portfolio' ),
+			),
+			'smoke_speed'     => array(
+				'label' => __( 'Velocità', 'francystore-portfolio' ),
+				'help'  => __( 'Quanto si muove il fumo. Sotto il 30 sembra quasi fermo, sopra il 70 diventa vento più che fumo.', 'francystore-portfolio' ),
+			),
+			'smoke_size'      => array(
+				'label' => __( 'Dimensione delle volute', 'francystore-portfolio' ),
+				'help'  => __( 'Volute grandi danno una nebbia morbida e uniforme, volute piccole uno sbuffo più definito e riconoscibile.', 'francystore-portfolio' ),
+			),
+			'logo_opacity'    => array(
+				'label' => __( 'Opacità del logo', 'francystore-portfolio' ),
+				'help'  => __( 'Abbassandola il logo si fonde di più con il fumo, come se fosse dentro la nebbia invece che davanti.', 'francystore-portfolio' ),
+			),
+		);
+	}
+
+	/**
+	 * Valore di una manopola del fumo, da 0 a 100.
+	 *
+	 * @param string $key Chiave dell'impostazione.
+	 * @return int
+	 */
+	public static function get_smoke_value( $key ) {
+		$value = self::get( $key );
+
+		return null === $value ? 50 : max( 0, min( 100, (int) $value ) );
 	}
 
 	/**
@@ -381,6 +433,16 @@ class FSP_Settings {
 
 		$color                  = isset( $input['smoke_color'] ) ? sanitize_hex_color( $input['smoke_color'] ) : '';
 		$output['smoke_color'] = $color ? $color : '#8fb6c8';
+
+		// Le manopole restano dentro 0-100: un valore fuori scala viene
+		// riportato al limite invece di far fallire tutto il salvataggio.
+		foreach ( array_keys( self::get_smoke_controls() ) as $control ) {
+			if ( ! isset( $input[ $control ] ) ) {
+				continue;
+			}
+
+			$output[ $control ] = max( 0, min( 100, absint( $input[ $control ] ) ) );
+		}
 
 		/*
 		 * Altezza del logo entro limiti ragionevoli: sotto i 20px sarebbe
@@ -620,6 +682,52 @@ class FSP_Settings {
 						</td>
 					</tr>
 				</table>
+
+				<h2 class="title"><?php esc_html_e( 'Regolazione del fumo', 'francystore-portfolio' ); ?></h2>
+				<p class="description fsp-settings__intro">
+					<?php esc_html_e( 'Tutti da 0 a 100. Valgono sia per il fumo dell\'intestazione sia per quello di sfondo. Non c\'è una combinazione giusta: dipende dal logo e dalla foto che ci metti dietro, quindi cambia un valore per volta e ricarica il portfolio per vedere l\'effetto.', 'francystore-portfolio' ); ?>
+				</p>
+
+				<table class="form-table fsp-smoke-table" role="presentation">
+					<?php foreach ( self::get_smoke_controls() as $key => $control ) : ?>
+						<tr>
+							<th scope="row">
+								<label for="fsp-<?php echo esc_attr( $key ); ?>"><?php echo esc_html( $control['label'] ); ?></label>
+							</th>
+							<td>
+								<?php
+								/*
+								 * Cursore e casella numerica insieme, legati fra loro
+								 * dal JavaScript: il cursore serve a cercare il valore
+								 * a occhio, la casella a rimetterci esattamente quello
+								 * che si era trovato buono la volta prima.
+								 */
+								?>
+								<input type="range"
+									class="fsp-range"
+									id="fsp-<?php echo esc_attr( $key ); ?>"
+									min="0"
+									max="100"
+									step="1"
+									value="<?php echo esc_attr( (string) self::get_smoke_value( $key ) ); ?>"
+									data-fsp-range="<?php echo esc_attr( $key ); ?>">
+								<input type="number"
+									class="small-text fsp-range__value"
+									min="0"
+									max="100"
+									step="1"
+									name="<?php echo esc_attr( self::OPTION_NAME ); ?>[<?php echo esc_attr( $key ); ?>]"
+									value="<?php echo esc_attr( (string) self::get_smoke_value( $key ) ); ?>"
+									data-fsp-range-value="<?php echo esc_attr( $key ); ?>">
+								<p class="description"><?php echo esc_html( $control['help'] ); ?></p>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</table>
+
+				<p class="description fsp-settings__intro">
+					<?php esc_html_e( 'Un punto di partenza che funziona quasi sempre: intensità 55, opacità 55, velocità 40, dimensione 55, logo 100. Da lì alza l\'intensità se il fumo si perde sullo sfondo, e abbassa l\'opacità del logo se lo vuoi più immerso.', 'francystore-portfolio' ); ?>
+				</p>
 
 				<h2 class="title"><?php esc_html_e( 'Contatti', 'francystore-portfolio' ); ?></h2>
 				<table class="form-table" role="presentation">

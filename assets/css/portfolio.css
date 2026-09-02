@@ -332,64 +332,84 @@ body.fsp-no-scroll {
 }
 
 /*
- * Livello del fumo dell'intestazione.
+ * I due livelli del fumo.
  *
- * position:absolute e non fixed: ancorato in cima alla pagina, scorre
- * via insieme all'intestazione. Fisso allo schermo resterebbe davanti
- * alle foto dei pezzi per tutta la navigazione, che è l'ultima cosa che
- * si vuole in un portfolio.
- *
- * Largo quanto la pagina e alto mezza schermata: sborda ampiamente dal
- * blocco del logo, ed è proprio quello che serve perché il fumo abbia
- * aria attorno.
+ * Il logo non è più disegnato dentro a un canvas: è rimasto un'immagine
+ * vera in pagina e scorre per conto suo. L'effetto "dentro al fumo"
+ * nasce dalla sovrapposizione — un livello sotto e uno sopra — invece
+ * che dall'ordine di disegno dentro un canvas solo. Ci si guadagna anche
+ * in nitidezza, perché il logo non viene più ricopiato.
  */
 .fsp-brand-smoke {
-	position: absolute;
+	pointer-events: none;
+	overflow: hidden;
+}
+
+/*
+ * Dietro: bloccato sullo schermo. Resta fermo mentre tutta la pagina
+ * scorre, e sta sotto al contenuto, quindi non vela mai le foto dei
+ * pezzi che gli passano davanti.
+ */
+.fsp-brand-smoke--back {
+	position: fixed;
 	top: 0;
 	left: 0;
 	width: 100%;
-	height: 52vh;
-	min-height: 380px;
+	height: 58vh;
+	min-height: 400px;
 	z-index: 1;
-	pointer-events: none;
-	overflow: hidden;
-	/* Dissolvenza verso il basso: il fumo si perde nella pagina invece di
-	   finire con un taglio netto a metà schermo. */
-	-webkit-mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
-	mask-image: linear-gradient(to bottom, #000 45%, transparent 100%);
+	-webkit-mask-image: linear-gradient(to bottom, #000 42%, transparent 100%);
+	mask-image: linear-gradient(to bottom, #000 42%, transparent 100%);
 }
 
 /*
- * Dissolvenza sui lati, tenuta separata da quella verticale.
+ * Davanti: solidale al marchio, se ne va con lui appena si scorre.
  *
- * Le due maschere stanno su due elementi annidati invece che su uno solo
- * con mask-composite: quella proprietà è supportata a macchia di
- * leopardo, e dove non c'è il fumo resterebbe tagliato di squadro sui
- * bordi dello schermo. Due elementi, due maschere semplici, nessuna
- * sorpresa.
+ * Fisso anche questo passerebbe sopra alle foto per tutta la
+ * navigazione, velandole. Legandolo al marchio, l'effetto si vede dove
+ * serve — attorno al logo — e sparisce appena si entra nella griglia.
+ *
+ * Largo più del blocco che lo contiene (100vw ricentrato) perché il
+ * marchio sta dentro la colonna di testo, mentre il fumo deve
+ * attraversare tutta la pagina.
  */
-.fsp-brand__canvas {
+.fsp-brand-smoke--front {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 100vw;
+	height: 300%;
+	min-height: 260px;
+	transform: translate(-50%, -50%);
+	z-index: 2;
+	-webkit-mask-image: radial-gradient(ellipse 46% 46% at 50% 50%, #000 20%, transparent 100%);
+	mask-image: radial-gradient(ellipse 46% 46% at 50% 50%, #000 20%, transparent 100%);
+}
+
+.fsp-brand-smoke__canvas {
 	display: block;
 	width: 100%;
 	height: 100%;
-	-webkit-mask-image: linear-gradient(to right, transparent 0%, #000 18%, #000 82%, transparent 100%);
-	mask-image: linear-gradient(to right, transparent 0%, #000 18%, #000 82%, transparent 100%);
 }
 
+/* Dissolvenza sui lati del livello di fondo, tenuta separata da quella
+   verticale: le due maschere su un elemento solo richiederebbero
+   mask-composite, supportato a macchia di leopardo. */
+.fsp-brand-smoke--back .fsp-brand-smoke__canvas {
+	-webkit-mask-image: linear-gradient(to right, transparent 0%, #000 16%, #000 84%, transparent 100%);
+	mask-image: linear-gradient(to right, transparent 0%, #000 16%, #000 84%, transparent 100%);
+}
 
 /*
- * Il marchio originale sparisce solo quando il canvas ha davvero
- * disegnato: la classe la mette il JavaScript alla fine del suo lavoro.
- * Si usa opacity e non display:none perché il canvas si dimensiona su
- * questo blocco e legge da qui quanto è grande il logo — togliendolo dal
- * flusso, non ci sarebbe più niente da misurare.
- *
- * Resta leggibile dai lettori di schermo e dai motori di ricerca, che
- * dal canvas non ricaverebbero nulla.
+ * Il marchio sta fra i due livelli, e la sua opacità si regola dalle
+ * impostazioni: abbassandola si fonde con il fumo, come se fosse dentro
+ * la nebbia invece che appoggiato sopra.
  */
-.fsp-brand.is-painted .fsp-archive__logo,
-.fsp-brand.is-painted .fsp-archive__title {
-	opacity: 0;
+.fsp-brand--smoke .fsp-archive__logo,
+.fsp-brand--smoke .fsp-archive__title {
+	position: relative;
+	z-index: 1;
+	opacity: var(--fsp-logo-opacity, 1);
 }
 
 /*

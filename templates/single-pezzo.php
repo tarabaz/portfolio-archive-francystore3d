@@ -63,6 +63,17 @@ while ( have_posts() ) :
 	$fsp_effect_mobile = FSP_Settings::background_effect_on_mobile();
 	$fsp_single_class  = 'fsp-single fsp-single--bg-' . $fsp_effect;
 
+	// Stesse manopole dell'archivio: senza, il fumo di sfondo della scheda
+	// girerebbe con i valori di partenza invece che con quelli impostati.
+	$fsp_smoke_params = wp_json_encode(
+		array(
+			'intensity' => FSP_Settings::get_smoke_value( 'smoke_intensity' ),
+			'opacity'   => FSP_Settings::get_smoke_value( 'smoke_opacity' ),
+			'speed'     => FSP_Settings::get_smoke_value( 'smoke_speed' ),
+			'size'      => FSP_Settings::get_smoke_value( 'smoke_size' ),
+		)
+	);
+
 	if ( ! $fsp_effect_mobile ) {
 		$fsp_single_class .= ' fsp-no-effect-mobile';
 	}
@@ -80,7 +91,9 @@ while ( have_posts() ) :
 
 <article class="<?php echo esc_attr( $fsp_single_class ); ?>"
 	data-bg-effect="<?php echo esc_attr( $fsp_effect ); ?>"
-	data-bg-effect-mobile="<?php echo $fsp_effect_mobile ? '1' : '0'; ?>">
+	data-bg-effect-mobile="<?php echo $fsp_effect_mobile ? '1' : '0'; ?>"
+	data-smoke-color="<?php echo esc_attr( FSP_Settings::get_smoke_color() ); ?>"
+	data-smoke-params="<?php echo esc_attr( $fsp_smoke_params ); ?>">
 
 	<?php if ( $fsp_bg_url ) : ?>
 		<div class="fsp-single__bg" aria-hidden="true">

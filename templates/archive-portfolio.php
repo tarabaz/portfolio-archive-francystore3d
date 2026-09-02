@@ -29,6 +29,19 @@ $fsp_logo_url    = $fsp_logo_id ? wp_get_attachment_image_url( $fsp_logo_id, 'fu
  */
 $fsp_logo_smoke    = FSP_Settings::logo_in_smoke();
 $fsp_smoke_color   = FSP_Settings::get_smoke_color();
+$fsp_logo_opacity  = FSP_Settings::get_smoke_value( 'logo_opacity' );
+
+// Le manopole arrivano al JavaScript come un unico attributo JSON: sono
+// tutte dello stesso tipo e servono tutte insieme, un attributo per
+// ciascuna sarebbe solo più markup da leggere.
+$fsp_smoke_params = wp_json_encode(
+	array(
+		'intensity' => FSP_Settings::get_smoke_value( 'smoke_intensity' ),
+		'opacity'   => FSP_Settings::get_smoke_value( 'smoke_opacity' ),
+		'speed'     => FSP_Settings::get_smoke_value( 'smoke_speed' ),
+		'size'      => FSP_Settings::get_smoke_value( 'smoke_size' ),
+	)
+);
 $fsp_effect        = FSP_Settings::get_background_effect();
 $fsp_effect_mobile = FSP_Settings::background_effect_on_mobile();
 $fsp_archive_class = 'fsp-archive fsp-archive--bg-' . $fsp_effect;
@@ -122,6 +135,7 @@ if ( is_tax( FSP_Taxonomies::SECTION ) ) {
 	data-bg-effect="<?php echo esc_attr( $fsp_effect ); ?>"
 	data-bg-effect-mobile="<?php echo $fsp_effect_mobile ? '1' : '0'; ?>"
 	data-smoke-color="<?php echo esc_attr( $fsp_smoke_color ); ?>"
+	data-smoke-params="<?php echo esc_attr( $fsp_smoke_params ); ?>"
 	data-section-backgrounds="<?php echo esc_attr( wp_json_encode( $fsp_section_backgrounds ) ); ?>"
 	data-home-background="<?php echo esc_url( $fsp_home_bg_url ); ?>">
 
@@ -145,7 +159,18 @@ if ( is_tax( FSP_Taxonomies::SECTION ) ) {
 	 */
 	?>
 	<?php if ( $fsp_logo_smoke ) : ?>
-		<div class="fsp-brand-smoke" data-fsp-brand-smoke aria-hidden="true"></div>
+		<?php
+		/*
+		 * Due livelli distinti, ed è la ragione per cui il logo non viene
+		 * più disegnato dentro al canvas: deve poter scorrere via da solo.
+		 *
+		 * Quello dietro è bloccato sullo schermo e resta fermo mentre la
+		 * pagina scorre. Quello davanti invece è solidale all'intestazione
+		 * e se ne va con lei: se restasse fisso anche lui, passerebbe sopra
+		 * alle foto dei pezzi per tutta la navigazione velandole.
+		 */
+		?>
+		<div class="fsp-brand-smoke fsp-brand-smoke--back" data-fsp-brand-smoke="back" aria-hidden="true"></div>
 	<?php endif; ?>
 
 	<div class="fsp-archive__overlay" aria-hidden="true"></div>
@@ -179,7 +204,12 @@ if ( is_tax( FSP_Taxonomies::SECTION ) ) {
 			 * attesa di qualcosa.
 			 */
 			?>
-			<div class="fsp-brand<?php echo $fsp_logo_smoke ? ' fsp-brand--smoke' : ''; ?>" data-fsp-brand>
+			<div class="fsp-brand<?php echo $fsp_logo_smoke ? ' fsp-brand--smoke' : ''; ?>"
+				data-fsp-brand
+				style="--fsp-logo-opacity: <?php echo esc_attr( (string) ( $fsp_logo_opacity / 100 ) ); ?>">
+				<?php if ( $fsp_logo_smoke ) : ?>
+					<div class="fsp-brand-smoke fsp-brand-smoke--front" data-fsp-brand-smoke="front" aria-hidden="true"></div>
+				<?php endif; ?>
 				<?php if ( $fsp_logo_url ) : ?>
 					<h1 class="fsp-archive__logo" style="--fsp-logo-height: <?php echo esc_attr( (string) $fsp_logo_height ); ?>px">
 						<img src="<?php echo esc_url( $fsp_logo_url ); ?>"

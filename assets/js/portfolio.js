@@ -903,58 +903,61 @@
 	 * ------------------------------------------------------------------ */
 
 	/**
-	 * Ridisegna il marchio dentro un canvas con delle volute di fumo che
-	 * gli passano metà dietro e metà davanti.
+	 * Manopole dell'effetto, dalle impostazioni.
 	 *
-	 * È lo stesso principio dell'effetto in three.js da cui nasce: dei
-	 * piani con sopra una texture di fumo, sparsi in profondità attorno al
-	 * titolo, che ruotano lentamente su sé stessi. Quello che nel 3D fa la
-	 * coordinata z — chi sta davanti e chi dietro — qui lo fa l'ordine di
-	 * disegno: prima le volute dietro, poi il marchio, poi quelle davanti.
-	 * La profondità apparente la danno le dimensioni, più grandi per le
-	 * volute vicine.
+	 * Arrivano tutte come valori da 0 a 100 e vengono qui tradotte nelle
+	 * unità che servono davvero. La traduzione sta in un punto solo così
+	 * i due livelli di fumo restano coerenti fra loro.
 	 *
-	 * La somma dei colori, che nel 3D era l'AdditiveBlending, qui è
-	 * 'lighter': i colori si sommano invece di coprirsi, quindi dove due
-	 * volute si sovrappongono la luce cresce.
+	 * @return {Object}
 	 */
-	function initBrandSmoke() {
-		var host = document.querySelector( '[data-fsp-brand-smoke]' );
+	function smokeParams() {
+		var root = document.querySelector( '[data-smoke-params]' );
+		var raw = parseJSON( root ? root.getAttribute( 'data-smoke-params' ) : '' ) || {};
 
-		if ( ! host || prefersReducedMotion() ) {
-			return;
+		var intensity = clamp01( raw.intensity, 55 );
+		var opacity = clamp01( raw.opacity, 55 );
+		var speed = clamp01( raw.speed, 40 );
+		var size = clamp01( raw.size, 55 );
+
+		return {
+			// Superficie che compete a una voluta: più alta l'intensità,
+			// meno superficie ciascuna, quindi più volute.
+			areaPerPuff: 40000 - intensity * 340,
+			alphaBase: .08 + ( opacity / 100 ) * .5,
+			alphaSpread: .1 + ( opacity / 100 ) * .35,
+			speed: speed / 50,
+			sizeFactor: .45 + ( size / 100 ) * 1.15
+		};
+	}
+
+	/**
+	 * @param {*}      value    Valore grezzo.
+	 * @param {number} fallback Valore se manca o non è un numero.
+	 * @return {number} Fra 0 e 100.
+	 */
+	function clamp01( value, fallback ) {
+		var n = parseInt( value, 10 );
+
+		if ( isNaN( n ) ) {
+			return fallback;
 		}
 
-		var root = host.closest( '[data-bg-effect-mobile]' );
-		var allowMobile = root && '1' === root.getAttribute( 'data-bg-effect-mobile' );
+		return Math.max( 0, Math.min( 100, n ) );
+	}
 
-		if ( window.innerWidth <= MOBILE_WIDTH && ! allowMobile ) {
-			return;
-		}
-
-		var brand = document.querySelector( '[data-fsp-brand]' );
-
-		if ( ! brand ) {
-			return;
-		}
-
-		var image = brand.querySelector( '[data-fsp-brand-image]' );
-		var textEl = brand.querySelector( '[data-fsp-brand-text]' );
-
-		if ( ! image && ! textEl ) {
-			return;
-		}
-
-		// Con un logo si aspetta che sia scaricato: disegnare un'immagine
-		// non ancora pronta non produce nulla e il marchio sparirebbe.
-		if ( image && ! image.complete ) {
-			image.addEventListener( 'load', function () {
-				initBrandSmoke();
-			}, { once: true } );
-
-			return;
-		}
-
+	/**
+	 * Costruisce un livello di fumo dentro a un contenitore.
+	 *
+	 * Il logo NON viene disegnato qui dentro: è rimasto un'immagine vera
+	 * in pagina, e deve poter scorrere per conto suo. L'effetto "dentro
+	 * al fumo" nasce dalla sovrapposizione di due livelli, uno sotto e
+	 * uno sopra al logo, invece che dall'ordine di disegno dentro un
+	 * canvas solo.
+	 *
+	 * @param {Element} host Contenitore del livello.
+	 */
+	function buildSmokeLayer( host ) {
 		var canvas = document.createElement( 'canvas' );
 		var ctx = canvas.getContext( '2d' );
 
@@ -962,9 +965,10 @@
 			return;
 		}
 
-		canvas.className = 'fsp-brand__canvas';
+		canvas.className = 'fsp-brand-smoke__canvas';
 		host.appendChild( canvas );
 
+		var params = smokeParams();
 		var rgb = smokeColor();
 		var sprites = [ createSmokeSprite( rgb, 3 ), createSmokeSprite( rgb, 17 ), createSmokeSprite( rgb, 41 ) ];
 		var puffs = [];
@@ -973,25 +977,6 @@
 		var ratio = 1;
 		var running = true;
 		var lastFrame = 0;
-		var textStyle = null;
-
-		// Dove cade il centro del marchio dentro al canvas. Il livello del
-		// fumo è ancorato in cima alla pagina e il marchio sta più in
-		// basso: senza questo scarto il logo verrebbe disegnato in
-		// corrispondenza del bordo superiore invece che al posto suo.
-		var brandX = 0;
-		var brandY = 0;
-
-		if ( textEl ) {
-			var computed = window.getComputedStyle( textEl );
-
-			textStyle = {
-				font: computed.fontWeight + ' ' + computed.fontSize + ' ' + computed.fontFamily,
-				color: computed.color,
-				spacing: parseFloat( computed.letterSpacing ) || 0,
-				text: textEl.textContent.trim()
-			};
-		}
 
 		function resize() {
 			width = host.offsetWidth;
@@ -1008,25 +993,7 @@
 
 			ctx.setTransform( ratio, 0, 0, ratio, 0, 0 );
 
-			measureBrand();
-
 			return true;
-		}
-
-		/**
-		 * Misura dove sta il marchio rispetto al livello del fumo.
-		 *
-		 * Si misura l'elemento vero invece di calcolare a mano una
-		 * posizione: così il logo disegnato cade esattamente dove sarebbe
-		 * caduto quello in pagina, qualunque siano intestazione, margini o
-		 * altezza scelta nelle impostazioni.
-		 */
-		function measureBrand() {
-			var hostRect = host.getBoundingClientRect();
-			var brandRect = brand.getBoundingClientRect();
-
-			brandX = brandRect.left - hostRect.left + brandRect.width / 2;
-			brandY = brandRect.top - hostRect.top + brandRect.height / 2;
 		}
 
 		function seed() {
@@ -1034,122 +1001,33 @@
 
 			/*
 			 * Il numero di volute segue la superficie da coprire, non è
-			 * fisso: la fascia è larga quanto la finestra, e con un numero
-			 * fisso il fumo risultava fitto su uno schermo piccolo e rado
-			 * fino a sparire su un monitor largo. I due limiti evitano gli
-			 * estremi — un pugno di volute perse nel vuoto, o centinaia da
-			 * disegnare su uno schermo molto grande.
+			 * fisso: a numero fisso il fumo risulta fitto su uno schermo
+			 * piccolo e rado fino a sparire su un monitor largo. I due
+			 * limiti evitano gli estremi.
 			 */
-			var count = Math.round( ( width * height ) / 22000 );
+			var count = Math.round( ( width * height ) / Math.max( 4000, params.areaPerPuff ) );
 
-			count = Math.max( 12, Math.min( 40, count ) );
+			count = Math.max( 4, Math.min( 60, count ) );
 
 			for ( var i = 0; i < count; i++ ) {
 				puffs.push( makePuff() );
 			}
-
-			// Metà dietro e metà davanti: è la divisione che crea
-			// l'impressione che il marchio stia dentro al fumo e non sopra.
-			puffs.forEach( function ( p, index ) {
-				p.front = index % 2 === 1;
-
-				// Quelle davanti vanno tenute più leggere: devono velare il
-				// marchio, non coprirlo. A parità di opacità il logo finisce
-				// dietro a una nebbia grigia e perde tutto il contrasto.
-				if ( p.front ) {
-					p.alpha *= .62;
-				}
-			} );
 		}
 
 		function makePuff() {
-			// Le volute davanti sono più grandi e più tenui, come se fossero
-			// più vicine all'obiettivo: è ciò che dà la sensazione di
-			// profondità senza avere una vera terza dimensione.
-			var size = height * ( .7 + Math.random() * .9 );
+			var base = Math.min( height, width * .5 );
 
 			return {
 				x: Math.random() * width,
-				// Addensate attorno al marchio e diradate verso il fondo,
-				// dove la maschera le sta già facendo svanire: disegnare
-				// molto dove non si vedrà è lavoro sprecato.
-				y: brandY + ( Math.random() - .35 ) * height * .8,
-				size: size,
+				y: Math.random() * height,
+				size: base * params.sizeFactor * ( .7 + Math.random() * .8 ),
 				angle: Math.random() * Math.PI * 2,
-				spin: ( Math.random() - .5 ) * .18,
-				driftX: ( Math.random() - .5 ) * 14,
-				driftY: -( 2 + Math.random() * 6 ),
-				alpha: .24 + Math.random() * .34,
-				sprite: sprites[ Math.floor( Math.random() * sprites.length ) ],
-				front: false
+				spin: ( Math.random() - .5 ) * .2 * params.speed,
+				driftX: ( Math.random() - .5 ) * 16 * params.speed,
+				driftY: -( 2 + Math.random() * 7 ) * params.speed,
+				alpha: params.alphaBase + Math.random() * params.alphaSpread,
+				sprite: sprites[ Math.floor( Math.random() * sprites.length ) ]
 			};
-		}
-
-		function drawPuff( p ) {
-			ctx.save();
-			ctx.globalAlpha = p.alpha;
-			ctx.translate( p.x, p.y );
-			ctx.rotate( p.angle );
-			ctx.drawImage( p.sprite, -p.size / 2, -p.size / 2, p.size, p.size );
-			ctx.restore();
-		}
-
-		function drawBrand() {
-			ctx.globalCompositeOperation = 'source-over';
-			ctx.globalAlpha = 1;
-
-			if ( image ) {
-				var w = image.offsetWidth;
-				var h = image.offsetHeight;
-
-				ctx.drawImage( image, brandX - w / 2, brandY - h / 2, w, h );
-
-				/*
-				 * Seconda passata sommata alla prima: è l'AdditiveBlending
-				 * che nel pen originale rendeva il titolo luminoso. Senza,
-				 * il marchio resta un'immagine piatta appoggiata sopra al
-				 * fumo; con, sembra emettere luce lui stesso e regge il
-				 * confronto con le volute che gli passano davanti.
-				 */
-				ctx.globalCompositeOperation = 'lighter';
-				ctx.globalAlpha = .4;
-				ctx.drawImage( image, brandX - w / 2, brandY - h / 2, w, h );
-				ctx.globalAlpha = 1;
-				ctx.globalCompositeOperation = 'source-over';
-
-				return;
-			}
-
-			ctx.font = textStyle.font;
-			ctx.fillStyle = textStyle.color;
-			ctx.textAlign = 'center';
-			ctx.textBaseline = 'middle';
-
-			// La spaziatura fra le lettere non esiste come proprietà del
-			// canvas: si disegna lettera per lettera aggiungendola a mano,
-			// altrimenti il titolo dentro al canvas risulterebbe più stretto
-			// di com'era in pagina e si vedrebbe il salto.
-			if ( ! textStyle.spacing ) {
-				ctx.fillText( textStyle.text, brandX, brandY );
-				return;
-			}
-
-			var letters = textStyle.text.split( '' );
-			var total = 0;
-			var widths = letters.map( function ( letter ) {
-				var w = ctx.measureText( letter ).width + textStyle.spacing;
-				total += w;
-				return w;
-			} );
-
-			var cursor = brandX - total / 2;
-
-			ctx.textAlign = 'left';
-
-			letters.forEach( function ( letter, index ) {
-				ctx.fillText( letter, cursor, brandY );
-				cursor += widths[ index ];
-			} );
 		}
 
 		function frame( now ) {
@@ -1159,6 +1037,8 @@
 
 			window.requestAnimationFrame( frame );
 
+			// Tetto a 30 fotogrammi al secondo: il fumo si muove piano e la
+			// differenza non si vede, il lavoro si dimezza.
 			if ( now - lastFrame < 33 ) {
 				return;
 			}
@@ -1168,12 +1048,10 @@
 
 			ctx.setTransform( ratio, 0, 0, ratio, 0, 0 );
 			ctx.clearRect( 0, 0, width, height );
+			ctx.globalCompositeOperation = 'lighter';
 
-			var i;
-			var p;
-
-			for ( i = 0; i < puffs.length; i++ ) {
-				p = puffs[ i ];
+			for ( var i = 0; i < puffs.length; i++ ) {
+				var p = puffs[ i ];
 
 				p.angle += p.spin * elapsed;
 				p.x += p.driftX * elapsed;
@@ -1190,27 +1068,13 @@
 				} else if ( p.x + p.size / 2 < 0 ) {
 					p.x = width + p.size / 2;
 				}
-			}
 
-			// 1. Le volute dietro.
-			ctx.globalCompositeOperation = 'lighter';
-
-			for ( i = 0; i < puffs.length; i++ ) {
-				if ( ! puffs[ i ].front ) {
-					drawPuff( puffs[ i ] );
-				}
-			}
-
-			// 2. Il marchio.
-			drawBrand();
-
-			// 3. Le volute davanti, che si sommano alla sua luce.
-			ctx.globalCompositeOperation = 'lighter';
-
-			for ( i = 0; i < puffs.length; i++ ) {
-				if ( puffs[ i ].front ) {
-					drawPuff( puffs[ i ] );
-				}
+				ctx.save();
+				ctx.globalAlpha = p.alpha;
+				ctx.translate( p.x, p.y );
+				ctx.rotate( p.angle );
+				ctx.drawImage( p.sprite, -p.size / 2, -p.size / 2, p.size, p.size );
+				ctx.restore();
 			}
 
 			ctx.globalAlpha = 1;
@@ -1222,17 +1086,14 @@
 		}
 
 		seed();
-
-		// L'originale si nasconde solo ora: fino a questo punto era lui a
-		// tenere occupata l'intestazione, ed è quello che resta a chi ha lo
-		// script bloccato.
-		brand.classList.add( 'is-painted' );
-
+		host.classList.add( 'is-painted' );
 		window.requestAnimationFrame( frame );
 
 		var resizeTimer = null;
 
 		window.addEventListener( 'resize', function () {
+			// Su mobile la barra degli indirizzi che compare e scompare
+			// genera una raffica di resize: si aspetta che si fermi.
 			window.clearTimeout( resizeTimer );
 			resizeTimer = window.setTimeout( function () {
 				if ( resize() ) {
@@ -1248,9 +1109,31 @@
 			}
 
 			running = true;
+			// Azzerato, altrimenti al rientro il primo fotogramma
+			// recupererebbe in un colpo tutto il tempo passato in pausa.
 			lastFrame = 0;
 			window.requestAnimationFrame( frame );
 		} );
+	}
+
+	/**
+	 * Accende i due livelli di fumo attorno al marchio.
+	 */
+	function initBrandSmoke() {
+		var layers = document.querySelectorAll( '[data-fsp-brand-smoke]' );
+
+		if ( ! layers.length || prefersReducedMotion() ) {
+			return;
+		}
+
+		var root = document.querySelector( '[data-bg-effect-mobile]' );
+		var allowMobile = root && '1' === root.getAttribute( 'data-bg-effect-mobile' );
+
+		if ( window.innerWidth <= MOBILE_WIDTH && ! allowMobile ) {
+			return;
+		}
+
+		Array.prototype.forEach.call( layers, buildSmokeLayer );
 	}
 
 	/* ------------------------------------------------------------------

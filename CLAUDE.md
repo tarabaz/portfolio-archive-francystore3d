@@ -138,6 +138,19 @@ volute davanti; l'`AdditiveBlending` diventa `globalCompositeOperation =
 per le sfilacciature, moltiplicato per una sfumatura circolare perché i bordi
 svaniscano). Quella del pen sta su un server di terzi e non è ridistribuibile.
 
+**Due livelli di fumo, e il logo NON è più disegnato dentro al canvas.** Quello
+dietro è `fixed` (resta fermo sullo schermo, e sta sotto al contenuto quindi non
+vela mai le foto); quello davanti è `absolute` dentro al blocco del marchio, così
+se ne va con lui appena si scorre. Fisso anche il davanti, passerebbe sopra alle
+foto per tutta la navigazione. Il logo resta un'immagine vera in pagina: scorre
+per conto suo, resta nitido, e la sua opacità è una variabile CSS dalle
+impostazioni.
+
+**Le manopole del fumo sono tutte 0-100** e la traduzione nelle unità vere
+(numero di volute, secondi, pixel) sta in un punto solo, `smokeParams()` nel JS.
+Verificato che cambiano davvero la resa: da intensità 10/opacità 20 a 95/90 la
+densità media misurata passa da 21 a 234.
+
 **Il livello del fumo dell'intestazione sta fuori dal contenuto, non dentro al
 blocco del logo.** Dentro sarebbe largo quanto la colonna di testo e, per avere
 aria attorno al marchio, servirebbero margini veri — che spingono in basso tutta

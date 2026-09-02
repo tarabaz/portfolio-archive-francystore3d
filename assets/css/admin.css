@@ -204,3 +204,28 @@ template[data-fsp-attributes-template] {
 	color: #8c8f94;
 	font-size: 12px;
 }
+
+/* --------------------------------------------------------------------
+   REGOLAZIONE DEL FUMO
+   -------------------------------------------------------------------- */
+
+.fsp-settings__intro {
+	max-width: 700px;
+}
+
+.fsp-range {
+	width: 260px;
+	max-width: 100%;
+	vertical-align: middle;
+}
+
+.fsp-range__value {
+	margin-left: 12px;
+	vertical-align: middle;
+}
+
+/* Le righe di questa tabella hanno tutte la stessa forma: allineare le
+   etichette a una larghezza fissa tiene i cursori incolonnati. */
+.fsp-smoke-table th {
+	width: 200px;
+}
