@@ -154,6 +154,16 @@ logo col fumo: senza fumo dietro restano un alone appiccicato al logo senza
 motivo — ed è esattamente il difetto che si vedeva disattivando l'effetto da
 mobile.
 
+**Il tetto a 30 fps salta solo mentre il marchio si sta muovendo.** Per il fumo
+30 fps vanno benissimo — si muove piano e non ha riferimenti — ma il marchio,
+scorrendo, l'occhio lo paragona alla pagina che scorre a 60/120Hz e ogni
+fotogramma saltato si legge come uno scatto. Si va a piena frequenza solo quando
+si scorre E si è dentro la distanza di dissolvenza: con i valori tipici sono
+decimi di secondo, non tutta la visita. Attenzione misurando: in headless
+`requestAnimationFrame` gira a ~20 fps, sotto il tetto stesso, quindi lì la
+differenza non è osservabile — la logica si verifica in isolamento
+(`test-frequenza.js`), la fluidità vera va giudicata su un dispositivo reale.
+
 **Il fumo non svanisce mai: solo il marchio.** La dissolvenza tocca l'opacità con
 cui si disegna il logo, non il canvas.
 

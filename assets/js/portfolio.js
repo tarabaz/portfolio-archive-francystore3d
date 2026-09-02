@@ -1080,6 +1080,11 @@
 		var running = true;
 		var lastFrame = 0;
 
+		// Ultima posizione di scorrimento vista e istante in cui si è
+		// mossa: servono a capire se il marchio si sta spostando adesso.
+		var lastScroll = -1;
+		var movedAt = 0;
+
 		function resize() {
 			width = host.offsetWidth;
 			height = host.offsetHeight;
@@ -1137,14 +1142,19 @@
 		 * Disegna il marchio con lo spostamento e la dissolvenza dovuti
 		 * alla posizione di scorrimento.
 		 *
+		 * La posizione arriva da fuori invece di essere riletta qui: è la
+		 * stessa su cui il ciclo ha appena deciso a che frequenza
+		 * disegnare, e leggerla due volte nello stesso fotogramma potrebbe
+		 * dare due valori diversi a metà di una scorsa.
+		 *
+		 * @param {number} scrolled Posizione di scorrimento.
 		 * @return {boolean} False se il marchio è ormai invisibile.
 		 */
-		function drawBrand() {
+		function drawBrand( scrolled ) {
 			if ( ! brand || ( ! brandImage && ! textStyle ) ) {
 				return false;
 			}
 
-			var scrolled = scrollTop();
 			var distance = params.fade;
 
 			// A distanza 0 la dissolvenza è spenta: il marchio resta dov'è.
@@ -1339,9 +1349,39 @@
 
 			window.requestAnimationFrame( frame );
 
-			// Tetto a 30 fotogrammi al secondo: il fumo si muove piano e la
-			// differenza non si vede, il lavoro si dimezza.
-			if ( now - lastFrame < 33 ) {
+			/*
+			 * Il tetto a 30 fotogrammi al secondo va bene per il fumo, che
+			 * si muove piano e non ha niente con cui essere confrontato. Il
+			 * marchio no: mentre si scorre, l'occhio lo paragona al resto
+			 * della pagina che scorre a 60 o 120, e ogni fotogramma saltato
+			 * si legge come uno scatto.
+			 *
+			 * Si va quindi a piena frequenza, ma solo nell'unico momento in
+			 * cui serve: mentre il marchio si sta spostando, cioè quando si
+			 * scorre e non si è ancora superata la distanza di dissolvenza.
+			 * Con i valori tipici sono pochi decimi di secondo per volta,
+			 * non tutta la visita.
+			 */
+			var scrolled = scrollTop();
+
+			if ( scrolled !== lastScroll ) {
+				lastScroll = scrolled;
+				movedAt = now;
+			}
+
+			// Oltre la distanza di dissolvenza il marchio è invisibile e
+			// nessuno si accorge dei 30 fps: il margine di 40px copre la
+			// coda della transizione.
+			var brandMoving = params.fade > 0 && scrolled <= params.fade + 40;
+
+			/*
+			 * Si resta a piena frequenza per un attimo dopo l'ultimo
+			 * movimento: lo scorrimento arriva a pacchetti, e senza questo
+			 * margine si tornerebbe a 30 fps in mezzo a una scorsa.
+			 */
+			var fullRate = brandMoving && ( now - movedAt ) < 180;
+
+			if ( ! fullRate && now - lastFrame < 33 ) {
 				return;
 			}
 
@@ -1386,7 +1426,7 @@
 				}
 			}
 
-			var brandDrawn = drawBrand();
+			var brandDrawn = drawBrand( scrolled );
 
 			ctx.globalCompositeOperation = 'lighter';
 
