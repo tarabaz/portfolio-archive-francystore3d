@@ -109,6 +109,32 @@ template[data-fsp-attributes-template] {
 }
 
 /* --------------------------------------------------------------------
+   IMMAGINI
+   -------------------------------------------------------------------- */
+
+/*
+ * Immagine principale e altre immagini affiancate: sono due cose
+ * diverse e vederle vicine chiarisce quale finisce nella griglia del
+ * portfolio e quale no.
+ */
+.fsp-images {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 20px;
+}
+
+@media (min-width: 1100px) {
+	.fsp-images {
+		grid-template-columns: minmax(0, 280px) minmax(0, 1fr);
+		gap: 28px;
+	}
+}
+
+.fsp-images .fsp-box__hint {
+	margin-top: 8px;
+}
+
+/* --------------------------------------------------------------------
    GALLERIA
    -------------------------------------------------------------------- */
 

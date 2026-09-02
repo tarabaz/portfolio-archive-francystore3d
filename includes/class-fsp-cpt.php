@@ -143,7 +143,15 @@ class FSP_CPT {
 			'show_in_menu'       => true,
 			'show_in_admin_bar'  => true,
 			'show_in_nav_menus'  => true,
-			'show_in_rest'       => true,
+			/*
+			 * REST disattivata di proposito: con show_in_rest attivo la
+			 * schermata di modifica è quella a blocchi, che qui non serve
+			 * — il pezzo si compila per campi, non si impagina. Senza,
+			 * WordPress usa l'editor classico e i meta box compaiono
+			 * subito sotto il titolo invece che schiacciati in un
+			 * pannello laterale.
+			 */
+			'show_in_rest'       => false,
 			'menu_icon'          => 'dashicons-format-gallery',
 			'query_var'          => true,
 			'capability_type'    => 'post',
@@ -154,12 +162,18 @@ class FSP_CPT {
 			),
 			'hierarchical'       => false,
 			/*
-			 * "editor" è incluso: la descrizione lunga del pezzo si
-			 * scrive nell'editor standard di WordPress invece che in un
-			 * campo custom. Così hai grassetti, elenchi e a capo senza
-			 * che io debba reimplementare una barra di formattazione.
+			 * Niente "editor": la descrizione si scrive nel campo del
+			 * meta box, che salva comunque nel contenuto del post. Il
+			 * pezzo è una scheda da compilare, non una pagina da
+			 * impaginare, e un editor completo inviterebbe solo a
+			 * costruire layout che il template poi non rispetta.
+			 *
+			 * Resta "thumbnail" perché l'immagine principale è la
+			 * featured image del post: il meta box la imposta con un
+			 * campo proprio, ma sotto resta il meccanismo standard di
+			 * WordPress.
 			 */
-			'supports'           => array( 'title', 'editor', 'thumbnail', 'excerpt', 'page-attributes' ),
+			'supports'           => array( 'title', 'thumbnail', 'page-attributes' ),
 			'menu_position'      => 21,
 		);
 

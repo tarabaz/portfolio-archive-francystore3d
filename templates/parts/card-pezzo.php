@@ -15,20 +15,20 @@ if ( ! defined( 'ABSPATH' ) ) {
 $fsp_id       = get_the_ID();
 $fsp_codice   = FSP_Meta::get( $fsp_id, 'codice' );
 $fsp_sections = get_the_terms( $fsp_id, FSP_Taxonomies::SECTION );
-$fsp_tags     = get_the_terms( $fsp_id, FSP_Taxonomies::TAG );
+$fsp_types    = get_the_terms( $fsp_id, FSP_Taxonomies::TAG );
 
 $fsp_sections = is_wp_error( $fsp_sections ) || ! $fsp_sections ? array() : $fsp_sections;
-$fsp_tags     = is_wp_error( $fsp_tags ) || ! $fsp_tags ? array() : $fsp_tags;
+$fsp_types    = is_wp_error( $fsp_types ) || ! $fsp_types ? array() : $fsp_types;
 
 /*
- * Sezioni e tag finiscono in due attributi data come slug separati da
- * spazio: il filtro JS li legge da qui, quindi non deve interrogare il
- * server ad ogni click. Lo spazio in testa e in coda serve al confronto
+ * Sezioni e tipologie finiscono in due attributi data come slug separati
+ * da spazio: il filtro JS li legge da qui, quindi non deve interrogare
+ * il server ad ogni click. Lo spazio in testa e in coda serve al confronto
  * con includes(' slug '), che così non fa scattare "lampada" su
  * "lampada-grande".
  */
 $fsp_section_slugs = ' ' . implode( ' ', wp_list_pluck( $fsp_sections, 'slug' ) ) . ' ';
-$fsp_tag_slugs     = ' ' . implode( ' ', wp_list_pluck( $fsp_tags, 'slug' ) ) . ' ';
+$fsp_type_slugs    = ' ' . implode( ' ', wp_list_pluck( $fsp_types, 'slug' ) ) . ' ';
 
 // Etichetta mostrata sulla scheda: la prima sezione assegnata.
 $fsp_section_label = $fsp_sections ? $fsp_sections[0]->name : '';
@@ -36,7 +36,7 @@ $fsp_section_label = $fsp_sections ? $fsp_sections[0]->name : '';
 <article class="fsp-card"
 	data-fsp-card
 	data-sections="<?php echo esc_attr( $fsp_section_slugs ); ?>"
-	data-tags="<?php echo esc_attr( $fsp_tag_slugs ); ?>">
+	data-types="<?php echo esc_attr( $fsp_type_slugs ); ?>">
 
 	<a class="fsp-card__link" href="<?php the_permalink(); ?>">
 

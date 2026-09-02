@@ -283,9 +283,8 @@ body.fsp-no-scroll {
 	color: #fff;
 }
 
-.fsp-chip--tag {
+.fsp-chip--type {
 	font-size: 11px;
-	text-transform: lowercase;
 }
 
 .fsp-chip__count {
@@ -491,25 +490,22 @@ body.fsp-no-scroll {
 	object-fit: cover;
 }
 
+/*
+ * Velo scuro leggero sopra allo sfondo: circa il 20%, quanto basta a
+ * staccare il testo senza spegnere la foto.
+ *
+ * Sotto resta però una sfumatura verso il fondo pagina. Non è
+ * decorazione: l'immagine finisce a una certa altezza e senza raccordo
+ * si vedrebbe il taglio netto fra la foto e il nero. La sfumatura parte
+ * bassa (dal 55% in giù) così la parte alta, quella che si guarda,
+ * resta al 20% pieno.
+ */
 .fsp-single__overlay {
 	position: absolute;
 	inset: 0;
 	z-index: 0;
 	pointer-events: none;
-	background: linear-gradient(180deg, rgba(8, 9, 10, .72) 0%, rgba(8, 9, 10, .45) 30%, var(--fsp-bg) 88%);
-}
-
-/*
- * Vignettatura in percentuale e non in pixel: con misure fisse la
- * fascia scura occuperebbe metà larghezza su un telefono e un decimo su
- * un monitor, facendo sparire l'immagine sul primo.
- */
-.fsp-single__vignette {
-	position: absolute;
-	inset: 0;
-	z-index: 0;
-	pointer-events: none;
-	background: radial-gradient(ellipse 80% 70% at 50% 38%, transparent 0%, rgba(0, 0, 0, .25) 55%, rgba(0, 0, 0, .75) 100%);
+	background: linear-gradient(180deg, rgba(8, 9, 10, .2) 0%, rgba(8, 9, 10, .2) 55%, var(--fsp-bg) 100%);
 }
 
 .fsp-single__inner {
@@ -525,6 +521,11 @@ body.fsp-no-scroll {
 	text-align: center;
 }
 
+/*
+ * Con il velo al 20% il titolo può capitare sopra una zona chiara della
+ * foto, dove il bianco su bianco sparisce: l'ombra lo tiene leggibile
+ * senza dover riscurire tutto lo sfondo.
+ */
 .fsp-single__title {
 	margin: 0;
 	font-size: clamp(28px, 5vw, 52px);
@@ -532,13 +533,15 @@ body.fsp-no-scroll {
 	line-height: 1.1;
 	text-transform: uppercase;
 	color: #fff;
+	text-shadow: 0 2px 18px rgba(0, 0, 0, .85), 0 1px 3px rgba(0, 0, 0, .7);
 }
 
 .fsp-single__code {
 	margin-top: 10px;
 	font-size: 11px;
 	letter-spacing: .3em;
-	color: var(--fsp-silver-dim);
+	color: var(--fsp-silver);
+	text-shadow: 0 1px 10px rgba(0, 0, 0, .9);
 }
 
 /*
@@ -584,9 +587,14 @@ body.fsp-no-scroll {
 	height: auto;
 }
 
+/*
+ * Miniature volutamente piccole: l'immagine principale sopra deve
+ * restare quella che si guarda, queste sono l'indice degli altri
+ * scatti.
+ */
 .fsp-single__gallery {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+	grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
 	gap: 8px;
 	margin: 12px 0 0;
 	padding: 0;
@@ -700,6 +708,10 @@ body.fsp-no-scroll {
 	gap: 6px;
 }
 
+/*
+ * Etichette e non link: niente cursore a manina né stato hover, così non
+ * promettono un click che non c'è.
+ */
 .fsp-term {
 	display: inline-block;
 	padding: 5px 10px;
@@ -709,12 +721,6 @@ body.fsp-no-scroll {
 	letter-spacing: .14em;
 	text-transform: uppercase;
 	color: var(--fsp-silver-dim);
-	transition: border-color .15s ease, color .15s ease;
-}
-
-.fsp-term:hover {
-	border-color: var(--fsp-line-strong);
-	color: #fff;
 }
 
 .fsp-term--section {
@@ -807,8 +813,13 @@ body.fsp-no-scroll {
 	background: var(--fsp-line);
 }
 
+/*
+ * Stesso corpo e stesso colore dei valori della scheda tecnica: le due
+ * parti si leggono di seguito e devono sembrare lo stesso documento,
+ * non due blocchi impaginati da persone diverse.
+ */
 .fsp-note__text {
-	font-size: 14px;
+	font-size: 13px;
 	line-height: 1.8;
 	color: var(--fsp-silver);
 }

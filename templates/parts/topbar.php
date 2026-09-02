@@ -19,12 +19,19 @@ $fsp_on_archive     = FSP_Template_Loader::is_portfolio_archive();
 $fsp_instagram_url  = FSP_Settings::get_instagram_url();
 ?>
 <nav class="fsp-topbar" aria-label="<?php esc_attr_e( 'Navigazione portfolio', 'francystore-portfolio' ); ?>">
-	<a class="fsp-topbar__link" href="<?php echo esc_url( home_url( '/' ) ); ?>">
-		<?php echo esc_html__( '← Torna al sito', 'francystore-portfolio' ); ?>
-	</a>
-
-	<?php // Dalla scheda singola si torna alla griglia; dalla griglia il link sarebbe a se stessa. ?>
-	<?php if ( ! $fsp_on_archive && $fsp_archive_link ) : ?>
+	<?php
+	/*
+	 * "Torna al sito" solo sulla griglia. Dalla scheda di un pezzo il
+	 * passo indietro naturale è il portfolio, non la home: offrire
+	 * entrambe le uscite inviterebbe ad abbandonare la scheda proprio
+	 * dove invece si vuole che il visitatore legga e poi scriva.
+	 */
+	?>
+	<?php if ( $fsp_on_archive ) : ?>
+		<a class="fsp-topbar__link" href="<?php echo esc_url( home_url( '/' ) ); ?>">
+			<?php echo esc_html__( '← Torna al sito', 'francystore-portfolio' ); ?>
+		</a>
+	<?php elseif ( $fsp_archive_link ) : ?>
 		<a class="fsp-topbar__link" href="<?php echo esc_url( $fsp_archive_link ); ?>">
 			<?php echo esc_html__( '← Portfolio', 'francystore-portfolio' ); ?>
 		</a>

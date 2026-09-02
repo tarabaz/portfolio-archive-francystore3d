@@ -8,14 +8,16 @@ a un pezzo scrive su Instagram.
 
 ## Cosa fa
 
-- **Archivio filtrabile in tempo reale** — sezioni e tag a selezione multipla,
-  con riordino animato delle schede e nessun ricaricamento di pagina
+- **Archivio filtrabile in tempo reale** — sezioni e tipologie a selezione
+  multipla, con riordino animato delle schede e nessun ricaricamento di pagina
 - **Pagina indipendente dal tema** — il portfolio ha il suo layout completo,
   cambiare tema non lo tocca
-- **Sfondi per sezione** — ogni sezione può avere la propria immagine, che
-  compare in dissolvenza quando la si filtra
+- **Sfondi a più livelli** — ogni pezzo può avere il suo sfondo, altrimenti
+  eredita quello della sezione e infine quello generale
 - **Schede tecniche flessibili** — campi base fissi più righe libere
   chiave/valore, per gestire lampade e figure senza campi vuoti
+- **Compilazione per campi** — nessun editor da impaginare: titolo, descrizione,
+  immagini e dati, e basta
 - **Contatto Instagram** — con il codice del pezzo copiato negli appunti, così
   chi scrive ha già il riferimento pronto
 
@@ -26,6 +28,7 @@ a un pezzo scrive su Instagram.
 3. Seleziona lo ZIP e attiva
 4. Vai su **Portfolio → Impostazioni** e compila almeno il profilo Instagram
 5. Crea le sezioni da **Portfolio → Sezioni** (Lampade, Action figure, Diorami…)
+   e le tipologie da **Portfolio → Tipologie** (Anime, Fantasy, Videogiochi…)
 6. Aggiungi il primo pezzo da **Portfolio → Aggiungi pezzo**
 
 Il portfolio è online su `iltuosito.it/portfolio`. L'indirizzo si cambia dalle
@@ -38,12 +41,14 @@ impostazioni.
 
 | Campo | Dove |
 | --- | --- |
-| Titolo e descrizione | editor standard |
-| Copertina (griglia) | box *Immagine di copertina*, colonna destra |
-| Galleria | box *Dati del pezzo*, in fondo |
-| Codice, materiale, altezza, tempo, anno | box *Dati del pezzo*, sezione *Dati base* |
-| Alimentazione, illuminazione, scala… | box *Dati del pezzo*, tabella *Altri dati* |
-| Sezione e tag | colonna destra |
+| Titolo | campo in cima alla schermata |
+| Descrizione | box *Scheda del pezzo*, sezione *Descrizione* |
+| Immagine principale (quella della griglia) | box *Scheda del pezzo*, sezione *Immagini* |
+| Altre immagini | box *Scheda del pezzo*, accanto alla principale |
+| Codice, materiale, altezza, tempo, anno | box *Scheda del pezzo*, sezione *Dati base* |
+| Alimentazione, illuminazione, scala… | box *Scheda del pezzo*, tabella *Altri dati* |
+| Sfondo della scheda | box *Scheda del pezzo*, in fondo |
+| Sezione e tipologia | colonna destra, a spunte |
 
 I campi lasciati vuoti non compaiono nella scheda pubblica.
 

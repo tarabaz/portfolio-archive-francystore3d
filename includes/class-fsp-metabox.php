@@ -2,10 +2,10 @@
 /**
  * Meta box di compilazione del pezzo in wp-admin.
  *
- * Un solo box "Dati del pezzo" con i campi base, la tabella degli
- * attributi liberi e la galleria: tenerli separati in tre box
- * costringerebbe a scorrere avanti e indietro durante l'inserimento,
- * che è l'operazione che si ripete più spesso.
+ * Un solo box con tutto quello che serve a descrivere un pezzo:
+ * descrizione, immagini, dati tecnici e sfondo. Tenerli separati in più
+ * box costringerebbe a scorrere avanti e indietro durante
+ * l'inserimento, che è l'operazione che si ripete più spesso.
  *
  * @package FrancyStorePortfolio
  */
@@ -22,12 +22,19 @@ class FSP_Metabox {
 	/** Nome del campo nonce nel form. */
 	const NONCE_NAME = 'fsp_piece_meta_nonce';
 
+	/** Nome del campo della descrizione nel form. */
+	const FIELD_DESCRIPTION = 'fsp_descrizione';
+
+	/** Nome del campo dell'immagine principale nel form. */
+	const FIELD_MAIN_IMAGE = 'fsp_immagine_principale';
+
 	/**
 	 * Aggancia registrazione, salvataggio e assets del meta box.
 	 */
 	public static function init() {
 		add_action( 'add_meta_boxes', array( __CLASS__, 'register_meta_box' ) );
 		add_action( 'save_post_' . FSP_CPT::POST_TYPE, array( __CLASS__, 'save' ), 10, 2 );
+		add_filter( 'wp_insert_post_data', array( __CLASS__, 'inject_description' ), 10, 2 );
 		add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue_editor_assets' ) );
 	}
 
@@ -37,7 +44,7 @@ class FSP_Metabox {
 	public static function register_meta_box() {
 		add_meta_box(
 			'fsp-piece-data',
-			__( 'Dati del pezzo', 'francystore-portfolio' ),
+			__( 'Scheda del pezzo', 'francystore-portfolio' ),
 			array( __CLASS__, 'render' ),
 			FSP_CPT::POST_TYPE,
 			'normal',
@@ -93,14 +100,12 @@ class FSP_Metabox {
 			'fsp-admin',
 			'fspAdmin',
 			array(
-				'mediaTitle'        => __( 'Seleziona un\'immagine', 'francystore-portfolio' ),
-				'mediaButton'       => __( 'Usa questa immagine', 'francystore-portfolio' ),
-				'galleryTitle'      => __( 'Seleziona le immagini della galleria', 'francystore-portfolio' ),
-				'galleryButton'     => __( 'Usa queste immagini', 'francystore-portfolio' ),
-				'removeLabel'       => __( 'Rimuovi', 'francystore-portfolio' ),
-				'attributeLabel'    => __( 'Dato', 'francystore-portfolio' ),
-				'attributeValue'    => __( 'Valore', 'francystore-portfolio' ),
-				'confirmRemoveRow'  => __( 'Vuoi rimuovere questa riga?', 'francystore-portfolio' ),
+				'mediaTitle'       => __( 'Seleziona un\'immagine', 'francystore-portfolio' ),
+				'mediaButton'      => __( 'Usa questa immagine', 'francystore-portfolio' ),
+				'galleryTitle'     => __( 'Seleziona le immagini della galleria', 'francystore-portfolio' ),
+				'galleryButton'    => __( 'Usa queste immagini', 'francystore-portfolio' ),
+				'removeLabel'      => __( 'Rimuovi', 'francystore-portfolio' ),
+				'confirmRemoveRow' => __( 'Vuoi rimuovere questa riga?', 'francystore-portfolio' ),
 			)
 		);
 	}
@@ -116,8 +121,71 @@ class FSP_Metabox {
 		$attributes  = FSP_Meta::get_attributes( $post->ID );
 		$gallery     = FSP_Meta::get_gallery( $post->ID );
 		$suggestions = FSP_Settings::get_attribute_suggestions();
+		$main_image  = (int) get_post_thumbnail_id( $post->ID );
+		$background  = (int) get_post_meta( $post->ID, FSP_Meta::KEY_BACKGROUND, true );
 		?>
 		<div class="fsp-box">
+
+			<h3 class="fsp-box__title"><?php esc_html_e( 'Descrizione', 'francystore-portfolio' ); ?></h3>
+			<p class="fsp-box__hint">
+				<?php esc_html_e( 'Il testo che compare sotto le immagini, nel riquadro "Note di lavorazione". Vai a capo dove serve: gli a capo vengono rispettati.', 'francystore-portfolio' ); ?>
+			</p>
+
+			<?php
+			/*
+			 * Il campo scrive nel contenuto del post, non in un meta a
+			 * parte: così le descrizioni già scritte quando il pezzo aveva
+			 * ancora l'editor restano al loro posto e modificabili, e il
+			 * template continua a leggerle da dove le ha sempre lette.
+			 */
+			?>
+			<textarea class="widefat"
+				rows="9"
+				id="<?php echo esc_attr( self::FIELD_DESCRIPTION ); ?>"
+				name="<?php echo esc_attr( self::FIELD_DESCRIPTION ); ?>"><?php echo esc_textarea( $post->post_content ); ?></textarea>
+
+			<hr class="fsp-box__sep">
+
+			<h3 class="fsp-box__title"><?php esc_html_e( 'Immagini', 'francystore-portfolio' ); ?></h3>
+
+			<div class="fsp-images">
+				<div class="fsp-images__main">
+					<label class="fsp-label"><?php esc_html_e( 'Immagine principale', 'francystore-portfolio' ); ?></label>
+					<?php self::render_media_picker( self::FIELD_MAIN_IMAGE, $main_image ); ?>
+					<p class="fsp-box__hint">
+						<?php esc_html_e( 'È la foto che rappresenta il pezzo nella griglia del portfolio, ed è anche quella grande in cima alla sua scheda. Se non la imposti, la griglia mostra un riquadro vuoto.', 'francystore-portfolio' ); ?>
+					</p>
+				</div>
+
+				<div class="fsp-images__gallery">
+					<label class="fsp-label"><?php esc_html_e( 'Altre immagini', 'francystore-portfolio' ); ?></label>
+
+					<div class="fsp-gallery" data-fsp-gallery>
+						<ul class="fsp-gallery__list" data-fsp-gallery-list>
+							<?php foreach ( $gallery as $image_id ) : ?>
+								<?php self::render_gallery_item( (int) $image_id ); ?>
+							<?php endforeach; ?>
+						</ul>
+
+						<input type="hidden"
+							name="<?php echo esc_attr( FSP_Meta::KEY_GALLERY ); ?>"
+							value="<?php echo esc_attr( implode( ',', $gallery ) ); ?>"
+							data-fsp-gallery-input>
+
+						<p>
+							<button type="button" class="button" data-fsp-gallery-select>
+								<?php esc_html_e( 'Gestisci le altre immagini', 'francystore-portfolio' ); ?>
+							</button>
+						</p>
+					</div>
+
+					<p class="fsp-box__hint">
+						<?php esc_html_e( 'Gli scatti aggiuntivi, mostrati in piccolo sotto l\'immagine principale. Si aprono ingranditi al click.', 'francystore-portfolio' ); ?>
+					</p>
+				</div>
+			</div>
+
+			<hr class="fsp-box__sep">
 
 			<h3 class="fsp-box__title"><?php esc_html_e( 'Dati base', 'francystore-portfolio' ); ?></h3>
 			<p class="fsp-box__hint">
@@ -203,30 +271,41 @@ class FSP_Metabox {
 
 			<hr class="fsp-box__sep">
 
-			<h3 class="fsp-box__title"><?php esc_html_e( 'Galleria', 'francystore-portfolio' ); ?></h3>
+			<h3 class="fsp-box__title"><?php esc_html_e( 'Sfondo della scheda', 'francystore-portfolio' ); ?></h3>
+			<?php self::render_media_picker( FSP_Meta::KEY_BACKGROUND, $background ); ?>
 			<p class="fsp-box__hint">
-				<?php esc_html_e( 'Gli scatti aggiuntivi del pezzo, mostrati sotto l\'immagine principale nella scheda. La copertina si imposta invece dal box "Immagine di copertina" nella colonna a destra: è quella che compare nella griglia del portfolio.', 'francystore-portfolio' ); ?>
+				<?php esc_html_e( 'Immagine grande dietro alla scheda di questo pezzo. Se non la imposti viene usato lo sfondo della sua sezione, e in mancanza di quello lo sfondo generale del portfolio.', 'francystore-portfolio' ); ?>
 			</p>
 
-			<div class="fsp-gallery" data-fsp-gallery>
-				<ul class="fsp-gallery__list" data-fsp-gallery-list>
-					<?php foreach ( $gallery as $image_id ) : ?>
-						<?php self::render_gallery_item( (int) $image_id ); ?>
-					<?php endforeach; ?>
-				</ul>
+		</div>
+		<?php
+	}
 
-				<input type="hidden"
-					name="<?php echo esc_attr( FSP_Meta::KEY_GALLERY ); ?>"
-					value="<?php echo esc_attr( implode( ',', $gallery ) ); ?>"
-					data-fsp-gallery-input>
-
-				<p>
-					<button type="button" class="button" data-fsp-gallery-select>
-						<?php esc_html_e( 'Gestisci galleria', 'francystore-portfolio' ); ?>
-					</button>
-				</p>
+	/**
+	 * Markup di un selettore di immagine singola.
+	 *
+	 * @param string $field_name Nome del campo nel form.
+	 * @param int    $image_id   ID dell'immagine già selezionata (0 = nessuna).
+	 */
+	private static function render_media_picker( $field_name, $image_id ) {
+		$image_url = $image_id ? wp_get_attachment_image_url( $image_id, 'medium' ) : '';
+		?>
+		<div class="fsp-media" data-fsp-media>
+			<div class="fsp-media__preview" data-fsp-media-preview>
+				<?php if ( $image_url ) : ?>
+					<img src="<?php echo esc_url( $image_url ); ?>" alt="">
+				<?php endif; ?>
 			</div>
-
+			<input type="hidden"
+				name="<?php echo esc_attr( $field_name ); ?>"
+				value="<?php echo esc_attr( (string) $image_id ); ?>"
+				data-fsp-media-input>
+			<button type="button" class="button" data-fsp-media-select>
+				<?php esc_html_e( 'Scegli immagine', 'francystore-portfolio' ); ?>
+			</button>
+			<button type="button" class="button-link fsp-media__remove" data-fsp-media-remove<?php echo $image_id ? '' : ' hidden'; ?>>
+				<?php esc_html_e( 'Rimuovi', 'francystore-portfolio' ); ?>
+			</button>
 		</div>
 		<?php
 	}
@@ -295,6 +374,65 @@ class FSP_Metabox {
 	}
 
 	/**
+	 * Porta la descrizione del meta box nel contenuto del post.
+	 *
+	 * Si passa da wp_insert_post_data e non da un update dentro
+	 * save_post: quello richiederebbe una seconda scrittura sul post
+	 * appena salvato, con il rischio di rientrare nei propri stessi hook.
+	 * Qui si interviene sui dati prima che vengano scritti, una volta
+	 * sola.
+	 *
+	 * @param array<string,mixed> $data    Dati normalizzati in scrittura.
+	 * @param array<string,mixed> $postarr Dati grezzi del post.
+	 * @return array<string,mixed>
+	 */
+	public static function inject_description( $data, $postarr ) {
+		if ( ! isset( $data['post_type'] ) || FSP_CPT::POST_TYPE !== $data['post_type'] ) {
+			return $data;
+		}
+
+		// Le revisioni salvano una copia del contenuto già corretto: non
+		// va reimpostato, o si sovrascriverebbe la revisione con il
+		// contenuto del form corrente.
+		if ( isset( $data['post_type'] ) && 'revision' === $data['post_type'] ) {
+			return $data;
+		}
+
+		if ( ! isset( $_POST[ self::FIELD_DESCRIPTION ] ) ) {
+			return $data;
+		}
+
+		$nonce = isset( $_POST[ self::NONCE_NAME ] ) ? sanitize_text_field( wp_unslash( $_POST[ self::NONCE_NAME ] ) ) : '';
+
+		if ( ! wp_verify_nonce( $nonce, self::NONCE_ACTION ) ) {
+			return $data;
+		}
+
+		$post_id = isset( $postarr['ID'] ) ? (int) $postarr['ID'] : 0;
+
+		if ( $post_id && ! current_user_can( 'edit_post', $post_id ) ) {
+			return $data;
+		}
+
+		/*
+		 * wp_kses_post e non sanitize_textarea_field: la descrizione può
+		 * contenere un grassetto o un corsivo incollati da altrove, e
+		 * sanitize_textarea_field li butterebbe via. wp_kses_post tiene
+		 * il markup che WordPress considera sicuro nei contenuti e scarta
+		 * il resto.
+		 *
+		 * Gli slash aggiunti da WordPress a $_POST si tolgono prima e si
+		 * rimettono dopo: wp_insert_post_data riceve e restituisce dati
+		 * ancora "slashati".
+		 */
+		$description = wp_kses_post( wp_unslash( $_POST[ self::FIELD_DESCRIPTION ] ) ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitizzato da wp_kses_post().
+
+		$data['post_content'] = wp_slash( $description );
+
+		return $data;
+	}
+
+	/**
 	 * Salva i campi del meta box.
 	 *
 	 * @param int     $post_id ID del pezzo.
@@ -356,6 +494,28 @@ class FSP_Metabox {
 			update_post_meta( $post_id, FSP_Meta::KEY_GALLERY, $gallery );
 		} else {
 			delete_post_meta( $post_id, FSP_Meta::KEY_GALLERY );
+		}
+
+		/*
+		 * L'immagine principale è la featured image del post: la si
+		 * imposta con le funzioni del core invece che con un meta
+		 * proprio, così resta quella che WordPress usa ovunque —
+		 * anteprime di condivisione comprese.
+		 */
+		$main_image = isset( $_POST[ self::FIELD_MAIN_IMAGE ] ) ? absint( wp_unslash( $_POST[ self::FIELD_MAIN_IMAGE ] ) ) : 0;
+
+		if ( $main_image ) {
+			set_post_thumbnail( $post_id, $main_image );
+		} else {
+			delete_post_thumbnail( $post_id );
+		}
+
+		$background = isset( $_POST[ FSP_Meta::KEY_BACKGROUND ] ) ? absint( wp_unslash( $_POST[ FSP_Meta::KEY_BACKGROUND ] ) ) : 0;
+
+		if ( $background ) {
+			update_post_meta( $post_id, FSP_Meta::KEY_BACKGROUND, $background );
+		} else {
+			delete_post_meta( $post_id, FSP_Meta::KEY_BACKGROUND );
 		}
 	}
 }

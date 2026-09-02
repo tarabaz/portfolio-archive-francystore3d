@@ -23,6 +23,9 @@ class FSP_Meta {
 	/** Meta con gli ID degli allegati della galleria. */
 	const KEY_GALLERY = 'fsp_galleria';
 
+	/** Meta con l'ID dell'immagine di sfondo dedicata al pezzo. */
+	const KEY_BACKGROUND = 'fsp_sfondo';
+
 	/**
 	 * Campi base, sempre presenti su ogni pezzo.
 	 *
@@ -104,6 +107,76 @@ class FSP_Meta {
 				'auth_callback'     => array( __CLASS__, 'auth_callback' ),
 			)
 		);
+
+		register_post_meta(
+			FSP_CPT::POST_TYPE,
+			self::KEY_BACKGROUND,
+			array(
+				'type'              => 'integer',
+				'single'            => true,
+				'default'           => 0,
+				'sanitize_callback' => 'absint',
+				'show_in_rest'      => false,
+				'auth_callback'     => array( __CLASS__, 'auth_callback' ),
+			)
+		);
+	}
+
+	/**
+	 * Immagine di sfondo da usare dietro alla scheda del pezzo.
+	 *
+	 * Si scende per gradi: sfondo del singolo pezzo, poi quello della
+	 * sua prima sezione, poi quello generale del portfolio. Così basta
+	 * impostare un'immagine per sezione per avere tutto coerente, e si
+	 * scende al singolo pezzo solo quando ne vale la pena — senza dover
+	 * ricaricare uno sfondo su ogni scheda.
+	 *
+	 * @param int $post_id ID del pezzo.
+	 * @return int ID allegato, 0 se non c'è nessuno sfondo a nessun livello.
+	 */
+	public static function get_background_id( $post_id ) {
+		$own = (int) get_post_meta( $post_id, self::KEY_BACKGROUND, true );
+
+		if ( $own ) {
+			return $own;
+		}
+
+		$sections = get_the_terms( $post_id, FSP_Taxonomies::SECTION );
+
+		if ( ! is_wp_error( $sections ) && $sections ) {
+			foreach ( $sections as $section ) {
+				$section_background = FSP_Taxonomies::get_background_id( $section->term_id );
+
+				if ( $section_background ) {
+					return $section_background;
+				}
+			}
+		}
+
+		return FSP_Settings::get_home_background_id();
+	}
+
+	/**
+	 * Immagine grande della scheda: la copertina del pezzo, oppure la
+	 * prima della galleria quando la copertina non è stata impostata.
+	 *
+	 * Il ripiego evita che una scheda con dieci foto caricate resti
+	 * senza immagine principale solo perché ci si è dimenticati di
+	 * indicare quale fosse la copertina.
+	 *
+	 * @param int $post_id ID del pezzo.
+	 * @return int ID allegato, 0 se il pezzo non ha nessuna immagine.
+	 */
+	public static function get_main_image_id( $post_id ) {
+		$thumbnail_id = (int) get_post_thumbnail_id( $post_id );
+
+		if ( $thumbnail_id ) {
+			return $thumbnail_id;
+		}
+
+		$gallery = self::get_gallery( $post_id );
+
+		return $gallery ? (int) $gallery[0] : 0;
 	}
 
 	/**

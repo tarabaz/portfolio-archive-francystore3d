@@ -22,31 +22,33 @@ while ( have_posts() ) :
 	$fsp_rows     = FSP_Meta::get_spec_rows( $fsp_id );
 	$fsp_gallery  = FSP_Meta::get_gallery( $fsp_id );
 	$fsp_sections = get_the_terms( $fsp_id, FSP_Taxonomies::SECTION );
-	$fsp_tags     = get_the_terms( $fsp_id, FSP_Taxonomies::TAG );
+	$fsp_types    = get_the_terms( $fsp_id, FSP_Taxonomies::TAG );
 
 	$fsp_sections = is_wp_error( $fsp_sections ) || ! $fsp_sections ? array() : $fsp_sections;
-	$fsp_tags     = is_wp_error( $fsp_tags ) || ! $fsp_tags ? array() : $fsp_tags;
+	$fsp_types    = is_wp_error( $fsp_types ) || ! $fsp_types ? array() : $fsp_types;
 
 	/*
-	 * Sfondo della scheda: quello della prima sezione del pezzo, con lo
-	 * sfondo generale del portfolio come riserva. Così una lampada resta
-	 * sull'ambientazione delle lampade anche quando la si apre da un
-	 * link diretto, senza dover impostare uno sfondo pezzo per pezzo.
+	 * Immagine grande in cima: la copertina del pezzo, o la prima della
+	 * galleria se la copertina non è stata impostata.
 	 */
-	$fsp_bg_id = 0;
+	$fsp_main_image = FSP_Meta::get_main_image_id( $fsp_id );
 
-	foreach ( $fsp_sections as $fsp_section ) {
-		$fsp_bg_id = FSP_Taxonomies::get_background_id( $fsp_section->term_id );
+	/*
+	 * Quando la grande arriva dalla galleria va tolta dalle miniature,
+	 * altrimenti la stessa foto comparirebbe due volte nella stessa
+	 * schermata.
+	 */
+	$fsp_gallery = array_values(
+		array_filter(
+			$fsp_gallery,
+			static function ( $image_id ) use ( $fsp_main_image ) {
+				return (int) $image_id !== (int) $fsp_main_image;
+			}
+		)
+	);
 
-		if ( $fsp_bg_id ) {
-			break;
-		}
-	}
-
-	if ( ! $fsp_bg_id ) {
-		$fsp_bg_id = FSP_Settings::get_home_background_id();
-	}
-
+	// Sfondo: pezzo, poi sezione, poi generale. La scelta sta in FSP_Meta.
+	$fsp_bg_id  = FSP_Meta::get_background_id( $fsp_id );
 	$fsp_bg_url = $fsp_bg_id ? wp_get_attachment_image_url( $fsp_bg_id, 'full' ) : '';
 
 	$fsp_instagram_url = FSP_Settings::get_instagram_url();
@@ -94,7 +96,6 @@ while ( have_posts() ) :
 	<?php endif; ?>
 
 	<div class="fsp-single__overlay" aria-hidden="true"></div>
-	<div class="fsp-single__vignette" aria-hidden="true"></div>
 	<div class="fsp-scanlines" aria-hidden="true"></div>
 
 	<div class="fsp-single__inner">
@@ -111,16 +112,23 @@ while ( have_posts() ) :
 
 		<div class="fsp-single__cols">
 
-			<?php // Colonna sinistra: immagine principale e galleria. ?>
+			<?php // Colonna sinistra: immagine principale e miniature. ?>
 			<div class="fsp-single__media-col">
 
-				<?php if ( has_post_thumbnail() ) : ?>
+				<?php if ( $fsp_main_image ) : ?>
 					<figure class="fsp-single__media">
 						<button type="button"
 							class="fsp-single__zoom"
-							data-fsp-lightbox="<?php echo esc_url( (string) wp_get_attachment_image_url( get_post_thumbnail_id(), 'full' ) ); ?>"
+							data-fsp-lightbox="<?php echo esc_url( (string) wp_get_attachment_image_url( $fsp_main_image, 'full' ) ); ?>"
 							aria-label="<?php esc_attr_e( 'Ingrandisci immagine', 'francystore-portfolio' ); ?>">
-							<?php the_post_thumbnail( 'large' ); ?>
+							<?php
+							echo wp_get_attachment_image( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- markup generato dal core.
+								$fsp_main_image,
+								'large',
+								false,
+								array( 'alt' => the_title_attribute( array( 'echo' => false ) ) )
+							);
+							?>
 						</button>
 					</figure>
 				<?php endif; ?>
@@ -176,31 +184,22 @@ while ( have_posts() ) :
 						<p class="fsp-panel__empty"><?php esc_html_e( 'Scheda tecnica non ancora compilata.', 'francystore-portfolio' ); ?></p>
 					<?php endif; ?>
 
-					<?php if ( $fsp_sections || $fsp_tags ) : ?>
+					<?php if ( $fsp_sections || $fsp_types ) : ?>
 						<div class="fsp-panel__rule"></div>
+						<?php
+						/*
+						 * Sezioni e tipologie sono etichette, non link: da qui
+						 * si è arrivati per guardare il pezzo, e un rimando
+						 * alla griglia filtrata porterebbe via dalla scheda
+						 * proprio dove invece si vuole leggere e poi scrivere.
+						 */
+						?>
 						<div class="fsp-panel__terms">
-							<?php
-							/*
-							 * I termini rimandano alla griglia con il filtro già
-							 * applicato tramite querystring, non all'archivio della
-							 * tassonomia. La differenza conta: sull'archivio di
-							 * tassonomia il server manda in pagina soltanto i pezzi di
-							 * quel termine, quindi togliendo il filtro dalla barra non
-							 * ricomparirebbe nulla — le altre schede non sono proprio
-							 * nel documento. Passando dalla griglia completa i filtri
-							 * restano reversibili senza ricaricare.
-							 */
-							$fsp_archive_url = get_post_type_archive_link( FSP_CPT::POST_TYPE );
-							?>
 							<?php foreach ( $fsp_sections as $fsp_section ) : ?>
-								<a class="fsp-term fsp-term--section" href="<?php echo esc_url( add_query_arg( 'sezione', $fsp_section->slug, $fsp_archive_url ) ); ?>">
-									<?php echo esc_html( $fsp_section->name ); ?>
-								</a>
+								<span class="fsp-term fsp-term--section"><?php echo esc_html( $fsp_section->name ); ?></span>
 							<?php endforeach; ?>
-							<?php foreach ( $fsp_tags as $fsp_tag ) : ?>
-								<a class="fsp-term" href="<?php echo esc_url( add_query_arg( 'tag', $fsp_tag->slug, $fsp_archive_url ) ); ?>">
-									<?php echo esc_html( $fsp_tag->name ); ?>
-								</a>
+							<?php foreach ( $fsp_types as $fsp_type ) : ?>
+								<span class="fsp-term"><?php echo esc_html( $fsp_type->name ); ?></span>
 							<?php endforeach; ?>
 						</div>
 					<?php endif; ?>
@@ -258,7 +257,7 @@ while ( have_posts() ) :
 
 		</div>
 
-		<?php if ( get_the_content() ) : ?>
+		<?php if ( trim( (string) get_the_content() ) ) : ?>
 			<section class="fsp-note">
 				<div class="fsp-note__head">
 					<?php esc_html_e( 'Note di lavorazione', 'francystore-portfolio' ); ?>

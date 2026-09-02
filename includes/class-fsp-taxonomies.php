@@ -1,6 +1,6 @@
 <?php
 /**
- * Tassonomie del portfolio: Sezioni e Tag.
+ * Tassonomie del portfolio: Sezioni e Tipologie.
  *
  * Sono tassonomie vere e non un elenco di stringhe salvato nelle
  * impostazioni: così si creano, rinominano, riordinano e cancellano
@@ -21,7 +21,16 @@ class FSP_Taxonomies {
 	/** Tassonomia gerarchica: la macro-categoria del pezzo. */
 	const SECTION = 'fsp_sezione';
 
-	/** Tassonomia piatta: etichette libere (serie, personaggio, stile...). */
+	/**
+	 * Tipologia del pezzo: gerarchica, quindi in fase di scrittura si
+	 * sceglie a spunte da un elenco chiuso invece di digitare a mano.
+	 *
+	 * Lo slug interno resta "fsp_tag" anche se ovunque si legge
+	 * "Tipologia": è la chiave con cui i termini sono già associati ai
+	 * pezzi nel database, e cambiarla li staccherebbe tutti. Il nome
+	 * interno non compare da nessuna parte nell'interfaccia né negli
+	 * indirizzi pubblici.
+	 */
 	const TAG = 'fsp_tag';
 
 	/** Chiave del term meta con l'ID dell'immagine di sfondo della sezione. */
@@ -68,7 +77,7 @@ class FSP_Taxonomies {
 				'hierarchical'      => true,
 				'show_ui'           => true,
 				'show_admin_column' => true,
-				'show_in_rest'      => true,
+				'show_in_rest'      => false,
 				'query_var'         => true,
 				'rewrite'           => array(
 					'slug'       => 'portfolio-sezione',
@@ -82,28 +91,36 @@ class FSP_Taxonomies {
 			FSP_CPT::POST_TYPE,
 			array(
 				'labels'            => array(
-					'name'                       => __( 'Tag portfolio', 'francystore-portfolio' ),
-					'singular_name'              => __( 'Tag', 'francystore-portfolio' ),
-					'menu_name'                  => __( 'Tag', 'francystore-portfolio' ),
-					'all_items'                  => __( 'Tutti i tag', 'francystore-portfolio' ),
-					'edit_item'                  => __( 'Modifica tag', 'francystore-portfolio' ),
-					'update_item'                => __( 'Aggiorna tag', 'francystore-portfolio' ),
-					'add_new_item'               => __( 'Aggiungi nuovo tag', 'francystore-portfolio' ),
-					'new_item_name'              => __( 'Nome del nuovo tag', 'francystore-portfolio' ),
-					'search_items'               => __( 'Cerca tag', 'francystore-portfolio' ),
-					'popular_items'              => __( 'Tag più usati', 'francystore-portfolio' ),
-					'separate_items_with_commas' => __( 'Separa i tag con una virgola', 'francystore-portfolio' ),
-					'choose_from_most_used'      => __( 'Scegli fra i tag più usati', 'francystore-portfolio' ),
-					'not_found'                  => __( 'Nessun tag trovato', 'francystore-portfolio' ),
+					'name'              => __( 'Tipologie', 'francystore-portfolio' ),
+					'singular_name'     => __( 'Tipologia', 'francystore-portfolio' ),
+					'menu_name'         => __( 'Tipologie', 'francystore-portfolio' ),
+					'all_items'         => __( 'Tutte le tipologie', 'francystore-portfolio' ),
+					'edit_item'         => __( 'Modifica tipologia', 'francystore-portfolio' ),
+					'update_item'       => __( 'Aggiorna tipologia', 'francystore-portfolio' ),
+					'add_new_item'      => __( 'Aggiungi nuova tipologia', 'francystore-portfolio' ),
+					'new_item_name'     => __( 'Nome della nuova tipologia', 'francystore-portfolio' ),
+					'search_items'      => __( 'Cerca tipologie', 'francystore-portfolio' ),
+					'parent_item'       => __( 'Tipologia superiore', 'francystore-portfolio' ),
+					'parent_item_colon' => __( 'Tipologia superiore:', 'francystore-portfolio' ),
+					'not_found'         => __( 'Nessuna tipologia trovata', 'francystore-portfolio' ),
 				),
 				'public'            => true,
-				'hierarchical'      => false,
+				/*
+				 * Gerarchica non per fare sottocategorie, ma per il tipo di
+				 * campo che ne consegue: WordPress mostra le tassonomie
+				 * gerarchiche come elenco di spunte e quelle piatte come
+				 * casella di testo libera. A spunte non serve ricordarsi
+				 * come si era scritta un'etichetta la volta prima, e
+				 * l'archivio non si riempie di doppioni tipo
+				 * "anime" / "Anime" / "anime ".
+				 */
+				'hierarchical'      => true,
 				'show_ui'           => true,
 				'show_admin_column' => true,
-				'show_in_rest'      => true,
+				'show_in_rest'      => false,
 				'query_var'         => true,
 				'rewrite'           => array(
-					'slug'       => 'portfolio-tag',
+					'slug'       => 'portfolio-tipologia',
 					'with_front' => false,
 				),
 			)

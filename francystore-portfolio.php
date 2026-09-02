@@ -3,7 +3,7 @@
  * Plugin Name:       FrancyStore Portfolio
  * Plugin URI:        https://francystore3d.com
  * Description:       Portfolio visivo dei pezzi realizzati da FrancyStore3D (action figure, lampade, diorami, stand). Archivio filtrabile in tempo reale, indipendente dal tema. Nessun e-commerce: il contatto avviene su Instagram.
- * Version:           1.0.0
+ * Version:           1.1.0
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            FrancyStore3D
@@ -26,7 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * fondo alla pagina impostazioni, per verificare a colpo d'occhio che
  * un aggiornamento sia stato effettivamente caricato dal browser.
  */
-define( 'FSP_VERSION', '1.0.0' );
+define( 'FSP_VERSION', '1.1.0' );
 
 /** Percorso assoluto della cartella del plugin, con trailing slash. */
 define( 'FSP_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
@@ -87,8 +87,34 @@ function fsp_activate_plugin() {
 	FSP_CPT::register_post_type();
 	FSP_Taxonomies::register_taxonomies();
 	flush_rewrite_rules();
+	update_option( 'fsp_flushed_version', FSP_VERSION );
 }
 register_activation_hook( FSP_PLUGIN_FILE, 'fsp_activate_plugin' );
+
+/**
+ * Rigenera le rewrite rules quando la versione del plugin cambia.
+ *
+ * Aggiornare il plugin sostituendo i file non fa scattare l'hook di
+ * attivazione: se una nuova versione cambia uno slug — com'è successo
+ * passando da "tag" a "tipologia" — le vecchie regole restano in
+ * circolo e gli indirizzi nuovi rispondono 404, con l'unica via
+ * d'uscita di aprire Impostazioni > Permalink e premere Salva. Il
+ * confronto con la versione salvata evita di dover ricordare quel
+ * passaggio ad ogni aggiornamento.
+ *
+ * Il flush è costoso, ma qui gira una volta sola per versione: appena
+ * fatto, il numero salvato coincide e le richieste successive escono
+ * subito.
+ */
+function fsp_maybe_flush_rewrite_rules() {
+	if ( get_option( 'fsp_flushed_version' ) === FSP_VERSION ) {
+		return;
+	}
+
+	flush_rewrite_rules();
+	update_option( 'fsp_flushed_version', FSP_VERSION );
+}
+add_action( 'init', 'fsp_maybe_flush_rewrite_rules', 99 );
 
 /**
  * Disattivazione: rimuove le rewrite rules aggiunte dal CPT.

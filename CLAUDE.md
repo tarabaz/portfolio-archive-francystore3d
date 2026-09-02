@@ -40,8 +40,8 @@ merge lasciati a lui, nessun passaggio git da fare a mano.
 | --- | --- |
 | `francystore-portfolio.php` | header, costanti, require, attivazione |
 | `includes/class-fsp-cpt.php` | CPT `fsp_pezzo`, query dell'archivio |
-| `includes/class-fsp-taxonomies.php` | `fsp_sezione` (gerarchica), `fsp_tag` (piatta), sfondo per sezione |
-| `includes/class-fsp-meta.php` | campi base, attributi liberi, galleria |
+| `includes/class-fsp-taxonomies.php` | `fsp_sezione` e `fsp_tag` (entrambe gerarchiche, la seconda mostrata come "Tipologia"), sfondo per sezione |
+| `includes/class-fsp-meta.php` | campi base, attributi liberi, galleria, sfondo e priorità |
 | `includes/class-fsp-metabox.php` | compilazione del pezzo in wp-admin |
 | `includes/class-fsp-admin-columns.php` | colonne miniatura e codice in lista |
 | `includes/class-fsp-settings.php` | pagina impostazioni |
@@ -79,16 +79,40 @@ riordino animato usa FLIP scritto a mano, senza Isotope/Shuffle. Regge
 comodamente il centinaio di pezzi previsto e la crescita di un paio al mese.
 
 **Logica dei filtri: OR dentro il gruppo, AND tra i gruppi.** "Lampade" +
-"Diorami" + tag "Anime" mostra le lampade e i diorami a tema anime.
+"Diorami" + tipologia "Anime" mostra le lampade e i diorami a tema anime.
+
+**La tassonomia interna si chiama ancora `fsp_tag`, ma ovunque si legge
+"Tipologia".** Rinominare lo slug staccherebbe i termini già assegnati ai pezzi.
+È gerarchica non per fare sottocategorie ma per il tipo di campo: WordPress
+mostra le gerarchiche a spunte e le piatte come testo libero, e a spunte non ci
+si ritrova "anime" / "Anime" / "anime " come tre termini distinti.
+
+**Niente editor a blocchi.** Il CPT non dichiara `editor` e ha
+`show_in_rest => false`, così WordPress serve la schermata classica e i meta box
+stanno sotto al titolo invece che schiacciati di lato. La descrizione si scrive
+in un campo del meta box che però salva in `post_content` (via il filtro
+`wp_insert_post_data`, non con un secondo update dentro `save_post`): i testi
+scritti quando l'editor c'era ancora restano leggibili e modificabili.
+
+**Immagine principale = featured image.** Il meta box ha un campo dedicato, ma
+sotto usa `set_post_thumbnail()`: resta l'immagine che WordPress conosce e che
+finisce nelle anteprime di condivisione. Se manca, la scheda ripiega sulla prima
+della galleria, e quell'immagine viene tolta dalle miniature per non mostrarla
+due volte.
+
+**Priorità dello sfondo della scheda: pezzo → sezione → generale.** La logica
+sta in `FSP_Meta::get_background_id()`, un punto solo per tutti i template.
+
+**Sezioni e tipologie nella scheda sono etichette, non link.** Dalla scheda si
+vuole che il visitatore legga e poi scriva, non che torni alla griglia.
+
+**Flush automatico delle rewrite rules al cambio di `FSP_VERSION`.**
+Aggiornare i file non fa scattare l'hook di attivazione: senza, ogni modifica a
+uno slug lascerebbe 404 finché non si risalvano i permalink a mano.
 
 **Sfondo durante il filtraggio:** una sola sezione selezionata → il suo sfondo;
 zero o più di una → sfondo generale. Tenere il primo della lista farebbe
 cambiare l'ambientazione in base all'ordine dei click.
-
-**I termini nella scheda rimandano alla griglia con querystring**
-(`?sezione=slug`), non all'archivio della tassonomia: lì il server manderebbe in
-pagina solo i pezzi di quel termine e togliere il filtro non farebbe ricomparire
-nulla, perché le altre schede non sarebbero nel documento.
 
 **Instagram non accetta messaggi precompilati.** Nessun link apre il DM con del
 testo già scritto: è un limite della piattaforma, non un pezzo mancante. Per

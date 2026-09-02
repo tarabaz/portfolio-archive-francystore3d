@@ -35,7 +35,7 @@ $fsp_sections = get_terms(
 	)
 );
 
-$fsp_tags = get_terms(
+$fsp_types = get_terms(
 	array(
 		'taxonomy'   => FSP_Taxonomies::TAG,
 		'hide_empty' => true,
@@ -44,7 +44,7 @@ $fsp_tags = get_terms(
 );
 
 $fsp_sections = is_wp_error( $fsp_sections ) ? array() : $fsp_sections;
-$fsp_tags     = is_wp_error( $fsp_tags ) ? array() : $fsp_tags;
+$fsp_types    = is_wp_error( $fsp_types ) ? array() : $fsp_types;
 
 /*
  * Mappa slug sezione => URL dello sfondo, passata al JS come JSON in un
@@ -75,14 +75,14 @@ foreach ( $fsp_sections as $fsp_section ) {
  * quello che si sta guardando invece di dire "tutti".
  */
 $fsp_preselected_section = '';
-$fsp_preselected_tag     = '';
+$fsp_preselected_type    = '';
 
 if ( is_tax( FSP_Taxonomies::SECTION ) ) {
 	$fsp_queried             = get_queried_object();
 	$fsp_preselected_section = $fsp_queried instanceof WP_Term ? $fsp_queried->slug : '';
 } elseif ( is_tax( FSP_Taxonomies::TAG ) ) {
-	$fsp_queried         = get_queried_object();
-	$fsp_preselected_tag = $fsp_queried instanceof WP_Term ? $fsp_queried->slug : '';
+	$fsp_queried          = get_queried_object();
+	$fsp_preselected_type = $fsp_queried instanceof WP_Term ? $fsp_queried->slug : '';
 }
 ?>
 <!DOCTYPE html>
@@ -125,7 +125,7 @@ if ( is_tax( FSP_Taxonomies::SECTION ) ) {
 			<?php require FSP_PLUGIN_DIR . 'templates/parts/topbar.php'; ?>
 		</header>
 
-		<?php if ( $fsp_sections || $fsp_tags ) : ?>
+		<?php if ( $fsp_sections || $fsp_types ) : ?>
 			<div class="fsp-filters" data-fsp-filters>
 
 				<?php if ( $fsp_sections ) : ?>
@@ -147,18 +147,18 @@ if ( is_tax( FSP_Taxonomies::SECTION ) ) {
 					</div>
 				<?php endif; ?>
 
-				<?php if ( $fsp_tags ) : ?>
-					<div class="fsp-filters__group" role="group" aria-label="<?php esc_attr_e( 'Filtra per tag', 'francystore-portfolio' ); ?>">
-						<div class="fsp-filters__legend"><?php esc_html_e( 'Tag', 'francystore-portfolio' ); ?></div>
+				<?php if ( $fsp_types ) : ?>
+					<div class="fsp-filters__group" role="group" aria-label="<?php esc_attr_e( 'Filtra per tipologia', 'francystore-portfolio' ); ?>">
+						<div class="fsp-filters__legend"><?php esc_html_e( 'Tipologie', 'francystore-portfolio' ); ?></div>
 						<div class="fsp-filters__chips">
-							<?php foreach ( $fsp_tags as $fsp_tag ) : ?>
-								<?php $fsp_is_on = ( $fsp_tag->slug === $fsp_preselected_tag ); ?>
+							<?php foreach ( $fsp_types as $fsp_type ) : ?>
+								<?php $fsp_is_on = ( $fsp_type->slug === $fsp_preselected_type ); ?>
 								<button type="button"
-									class="fsp-chip fsp-chip--tag<?php echo $fsp_is_on ? ' is-active' : ''; ?>"
-									data-fsp-filter="tag"
-									data-value="<?php echo esc_attr( $fsp_tag->slug ); ?>"
+									class="fsp-chip fsp-chip--type<?php echo $fsp_is_on ? ' is-active' : ''; ?>"
+									data-fsp-filter="type"
+									data-value="<?php echo esc_attr( $fsp_type->slug ); ?>"
 									aria-pressed="<?php echo $fsp_is_on ? 'true' : 'false'; ?>">
-									<?php echo esc_html( $fsp_tag->name ); ?>
+									<?php echo esc_html( $fsp_type->name ); ?>
 								</button>
 							<?php endforeach; ?>
 						</div>

@@ -59,23 +59,23 @@
 		// Stato dei filtri: due insiemi di slug selezionati.
 		var selected = {
 			section: [],
-			tag: []
+			type: []
 		};
 
 		/**
 		 * Un pezzo passa il filtro se rientra in ALMENO UNA delle sezioni
-		 * selezionate E in ALMENO UNO dei tag selezionati. I due gruppi
-		 * si restringono a vicenda, le voci dentro un gruppo si sommano:
-		 * spuntare "Lampade" e "Diorami" mostra entrambe le famiglie,
-		 * aggiungere il tag "Anime" tiene di quelle solo le a tema anime.
-		 * Un gruppo senza selezioni non filtra nulla.
+		 * selezionate E in ALMENO UNA delle tipologie selezionate. I due
+		 * gruppi si restringono a vicenda, le voci dentro un gruppo si
+		 * sommano: spuntare "Lampade" e "Diorami" mostra entrambe le
+		 * famiglie, aggiungere la tipologia "Anime" tiene di quelle solo
+		 * le a tema anime. Un gruppo senza selezioni non filtra nulla.
 		 *
 		 * @param {Element} card Scheda da valutare.
 		 * @return {boolean}
 		 */
 		function matches( card ) {
 			return groupMatches( card.getAttribute( 'data-sections' ), selected.section ) &&
-				groupMatches( card.getAttribute( 'data-tags' ), selected.tag );
+				groupMatches( card.getAttribute( 'data-types' ), selected.type );
 		}
 
 		/**
@@ -204,7 +204,7 @@
 				emptyEl.hidden = visible > 0;
 			}
 
-			var hasFilters = selected.section.length > 0 || selected.tag.length > 0;
+			var hasFilters = selected.section.length > 0 || selected.type.length > 0;
 
 			if ( resetEl ) {
 				resetEl.hidden = ! hasFilters;
@@ -310,7 +310,7 @@
 			var params = new URLSearchParams( window.location.search );
 
 			setParam( params, 'sezione', selected.section );
-			setParam( params, 'tag', selected.tag );
+			setParam( params, 'tipologia', selected.type );
 
 			var query = params.toString();
 
@@ -352,7 +352,7 @@
 		if ( resetEl ) {
 			resetEl.addEventListener( 'click', function () {
 				selected.section = [];
-				selected.tag = [];
+				selected.type = [];
 
 				chips.forEach( function ( chip ) {
 					chip.classList.remove( 'is-active' );
@@ -371,7 +371,7 @@
 		var params = new URLSearchParams( window.location.search );
 
 		readParam( params, 'sezione', 'section' );
-		readParam( params, 'tag', 'tag' );
+		readParam( params, 'tipologia', 'type' );
 
 		function readParam( source, name, type ) {
 			var raw = source.get( name );
