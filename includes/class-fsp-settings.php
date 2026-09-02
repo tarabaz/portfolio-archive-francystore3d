@@ -43,6 +43,8 @@ class FSP_Settings {
 			'header_logo'            => 0,
 			'header_logo_height'     => 90,
 			'home_background_image'  => 0,
+			'background_effect'      => 'scroll',
+			'background_effect_mobile' => '',
 			'instagram_handle'       => '',
 			'whatsapp_number'        => '',
 			'attribute_suggestions'  => "Alimentazione\nTipo illuminazione\nScala\nBase inclusa\nVerniciatura\nPeso\nPersonalizzabile",
@@ -102,6 +104,45 @@ class FSP_Settings {
 	 */
 	public static function get_home_background_id() {
 		return (int) self::get( 'home_background_image' );
+	}
+
+	/**
+	 * Modi possibili per lo sfondo del portfolio.
+	 *
+	 * @return array<string,string> valore salvato => etichetta.
+	 */
+	public static function get_background_effects() {
+		return array(
+			'scroll' => __( 'Scorre con la pagina', 'francystore-portfolio' ),
+			'fixed'  => __( 'Resta fermo mentre scorri', 'francystore-portfolio' ),
+			'smoke'  => __( 'Fermo, con fumo animato sopra', 'francystore-portfolio' ),
+		);
+	}
+
+	/**
+	 * Effetto scelto per lo sfondo.
+	 *
+	 * @return string
+	 */
+	public static function get_background_effect() {
+		$value = (string) self::get( 'background_effect' );
+
+		return array_key_exists( $value, self::get_background_effects() ) ? $value : 'scroll';
+	}
+
+	/**
+	 * True se l'effetto va mostrato anche su telefono.
+	 *
+	 * Di default è spento: sfondo fermo e fumo animato costano entrambi
+	 * a un telefono — il primo in ridisegni durante lo scorrimento, il
+	 * secondo in batteria — e chi guarda il portfolio dal telefono ci
+	 * arriva quasi sempre da Instagram, cioè da una connessione dati e
+	 * con l'app aperta di fianco.
+	 *
+	 * @return bool
+	 */
+	public static function background_effect_on_mobile() {
+		return '1' === (string) self::get( 'background_effect_mobile' );
 	}
 
 	/**
@@ -308,6 +349,13 @@ class FSP_Settings {
 		$output['home_background_image'] = isset( $input['home_background_image'] ) ? absint( $input['home_background_image'] ) : 0;
 		$output['header_logo']           = isset( $input['header_logo'] ) ? absint( $input['header_logo'] ) : 0;
 
+		$effect                     = isset( $input['background_effect'] ) ? sanitize_key( $input['background_effect'] ) : 'scroll';
+		$output['background_effect'] = array_key_exists( $effect, self::get_background_effects() ) ? $effect : 'scroll';
+
+		// Una casella non spuntata non viene inviata dal browser: l'assenza
+		// vale come "no", non come "lascia com'era".
+		$output['background_effect_mobile'] = ! empty( $input['background_effect_mobile'] ) ? '1' : '';
+
 		/*
 		 * Altezza del logo entro limiti ragionevoli: sotto i 20px sarebbe
 		 * illeggibile e sopra i 400 spingerebbe la griglia fuori dalla
@@ -481,6 +529,38 @@ class FSP_Settings {
 							</div>
 							<p class="description">
 								<?php esc_html_e( 'Sfondo di partenza della griglia. Quando filtri su una sola sezione viene sostituito dallo sfondo di quella sezione, se ne ha uno.', 'francystore-portfolio' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<label for="fsp-bg-effect"><?php esc_html_e( 'Comportamento dello sfondo', 'francystore-portfolio' ); ?></label>
+						</th>
+						<td>
+							<select id="fsp-bg-effect" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[background_effect]">
+								<?php foreach ( self::get_background_effects() as $value => $label ) : ?>
+									<option value="<?php echo esc_attr( $value ); ?>" <?php selected( $settings['background_effect'], $value ); ?>>
+										<?php echo esc_html( $label ); ?>
+									</option>
+								<?php endforeach; ?>
+							</select>
+							<p class="description">
+								<?php esc_html_e( 'Con "resta fermo" il portfolio scorre sopra allo sfondo, che non si muove. Il fumo animato aggiunge sopra allo sfondo delle volute lente disegnate dal browser: fa scena, ma è JavaScript che gira di continuo.', 'francystore-portfolio' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Effetto su telefono', 'francystore-portfolio' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox"
+									name="<?php echo esc_attr( self::OPTION_NAME ); ?>[background_effect_mobile]"
+									value="1"
+									<?php checked( self::background_effect_on_mobile() ); ?>>
+								<?php esc_html_e( 'Usa l\'effetto anche su telefono', 'francystore-portfolio' ); ?>
+							</label>
+							<p class="description">
+								<?php esc_html_e( 'Meglio lasciarlo spento. Sfondo fermo e fumo animato costano entrambi a un telefono — il primo in ridisegni durante lo scorrimento, il secondo in batteria — e chi guarda il portfolio dal cellulare ci arriva quasi sempre da Instagram, con l\'app aperta di fianco. Spento, su telefono torna lo sfondo normale che scorre con la pagina.', 'francystore-portfolio' ); ?>
 							</p>
 						</td>
 					</tr>

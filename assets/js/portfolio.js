@@ -566,6 +566,216 @@
 	}
 
 	/* ------------------------------------------------------------------
+	 * Fumo animato di sfondo
+	 * ------------------------------------------------------------------ */
+
+	/** Larghezza sotto la quale si considera di essere su un telefono. */
+	var MOBILE_WIDTH = 700;
+
+	/**
+	 * Volute di fumo lente sopra allo sfondo, disegnate su un canvas.
+	 *
+	 * Tre accorgimenti tengono basso il costo, perché questo è codice che
+	 * gira per tutto il tempo in cui la pagina resta aperta:
+	 *
+	 * 1. lo sbuffo è disegnato UNA volta sola su un canvas fuori schermo
+	 *    e poi ricopiato: ricalcolare una ventina di gradienti radiali ad
+	 *    ogni fotogramma è l'errore che fa scaldare i telefoni;
+	 * 2. si va a 30 fotogrammi al secondo invece di 60 — il fumo si muove
+	 *    piano e la differenza non si vede, il lavoro si dimezza;
+	 * 3. quando la scheda passa in secondo piano l'animazione si ferma
+	 *    del tutto, invece di continuare a disegnare per nessuno.
+	 */
+	function initSmoke() {
+		var host = document.querySelector( '[data-fsp-smoke]' );
+
+		if ( ! host ) {
+			return;
+		}
+
+		var root = host.closest( '[data-bg-effect]' );
+
+		if ( ! root || 'smoke' !== root.getAttribute( 'data-bg-effect' ) ) {
+			return;
+		}
+
+		// Su telefono l'effetto parte solo se è stato chiesto esplicitamente.
+		if ( window.innerWidth <= MOBILE_WIDTH && '1' !== root.getAttribute( 'data-bg-effect-mobile' ) ) {
+			return;
+		}
+
+		// Chi ha chiesto meno animazioni al sistema operativo non vede il
+		// fumo affatto: resta lo sfondo fermo, che è già un bel risultato.
+		if ( prefersReducedMotion() ) {
+			return;
+		}
+
+		var canvas = document.createElement( 'canvas' );
+		var ctx = canvas.getContext( '2d' );
+
+		if ( ! ctx ) {
+			return;
+		}
+
+		host.appendChild( canvas );
+
+		var puff = buildPuff();
+		var puffs = [];
+		var width = 0;
+		var height = 0;
+		var ratio = 1;
+		var running = true;
+		var lastFrame = 0;
+
+		function resize() {
+			width = host.offsetWidth || window.innerWidth;
+			height = host.offsetHeight || window.innerHeight;
+
+			/*
+			 * Il rapporto pixel si ferma a 1.5 anche sugli schermi che
+			 * dichiarano 3: il fumo è tutto sfocato, la definizione in più
+			 * non si vedrebbe, mentre l'area da disegnare crescerebbe con
+			 * il quadrato del rapporto.
+			 */
+			ratio = Math.min( window.devicePixelRatio || 1, 1.5 );
+
+			canvas.width = Math.round( width * ratio );
+			canvas.height = Math.round( height * ratio );
+			canvas.style.width = width + 'px';
+			canvas.style.height = height + 'px';
+
+			ctx.setTransform( ratio, 0, 0, ratio, 0, 0 );
+		}
+
+		/**
+		 * Disegna una volta sola uno sbuffo sfumato su un canvas separato,
+		 * da ricopiare poi ad ogni fotogramma.
+		 *
+		 * @return {HTMLCanvasElement}
+		 */
+		function buildPuff() {
+			var size = 256;
+			var off = document.createElement( 'canvas' );
+			var octx = off.getContext( '2d' );
+
+			off.width = size;
+			off.height = size;
+
+			var gradient = octx.createRadialGradient( size / 2, size / 2, 0, size / 2, size / 2, size / 2 );
+
+			gradient.addColorStop( 0, 'rgba(216, 219, 222, .16)' );
+			gradient.addColorStop( .45, 'rgba(216, 219, 222, .06)' );
+			gradient.addColorStop( 1, 'rgba(216, 219, 222, 0)' );
+
+			octx.fillStyle = gradient;
+			octx.fillRect( 0, 0, size, size );
+
+			return off;
+		}
+
+		function seed() {
+			puffs = [];
+
+			// Meno sbuffi su schermo stretto: l'area è minore e restano
+			// comunque fitti.
+			var count = width < 900 ? 9 : 16;
+
+			for ( var i = 0; i < count; i++ ) {
+				puffs.push( makePuff( true ) );
+			}
+		}
+
+		/**
+		 * @param {boolean} anywhere True per distribuirlo su tutta l'altezza
+		 *                           (al primo caricamento), false per farlo
+		 *                           entrare dal basso.
+		 */
+		function makePuff( anywhere ) {
+			var size = 260 + Math.random() * 420;
+
+			return {
+				x: Math.random() * width,
+				y: anywhere ? Math.random() * height : height + size / 2,
+				size: size,
+				// Velocità di salita in pixel al secondo: molto lenta, il
+				// fumo deve sembrare fermo se lo guardi un istante.
+				speed: 6 + Math.random() * 10,
+				drift: ( Math.random() - .5 ) * 8,
+				alpha: .35 + Math.random() * .45,
+				phase: Math.random() * Math.PI * 2
+			};
+		}
+
+		function frame( now ) {
+			if ( ! running ) {
+				return;
+			}
+
+			window.requestAnimationFrame( frame );
+
+			// Tetto a 30 fotogrammi al secondo.
+			if ( now - lastFrame < 33 ) {
+				return;
+			}
+
+			var elapsed = lastFrame ? Math.min( ( now - lastFrame ) / 1000, .2 ) : 0;
+			lastFrame = now;
+
+			ctx.clearRect( 0, 0, width, height );
+
+			for ( var i = 0; i < puffs.length; i++ ) {
+				var p = puffs[ i ];
+
+				p.y -= p.speed * elapsed;
+				p.phase += elapsed * .35;
+				p.x += ( p.drift + Math.sin( p.phase ) * 6 ) * elapsed;
+
+				// Uscito dall'alto: si ricicla dal basso invece di crearne
+				// uno nuovo, così il numero di oggetti resta costante.
+				if ( p.y + p.size / 2 < 0 ) {
+					puffs[ i ] = makePuff( false );
+					continue;
+				}
+
+				ctx.globalAlpha = p.alpha;
+				ctx.drawImage( puff, p.x - p.size / 2, p.y - p.size / 2, p.size, p.size );
+			}
+
+			ctx.globalAlpha = 1;
+		}
+
+		resize();
+		seed();
+		window.requestAnimationFrame( frame );
+
+		var resizeTimer = null;
+
+		window.addEventListener( 'resize', function () {
+			// Su mobile la barra degli indirizzi che compare e scompare
+			// genera una raffica di resize: si aspetta che si fermi.
+			window.clearTimeout( resizeTimer );
+			resizeTimer = window.setTimeout( function () {
+				resize();
+				seed();
+			}, 200 );
+		} );
+
+		document.addEventListener( 'visibilitychange', function () {
+			if ( document.hidden ) {
+				running = false;
+				return;
+			}
+
+			running = true;
+			// Azzerato, altrimenti al rientro il primo fotogramma
+			// recupererebbe in un colpo tutto il tempo passato in pausa e
+			// il fumo farebbe un salto.
+			lastFrame = 0;
+			window.requestAnimationFrame( frame );
+		} );
+	}
+
+	/* ------------------------------------------------------------------
 	 * Copia del codice pezzo
 	 * ------------------------------------------------------------------ */
 
@@ -644,6 +854,7 @@
 		initPieceGallery();
 		initLightbox();
 		initCopy();
+		initSmoke();
 	}
 
 	if ( 'loading' === document.readyState ) {

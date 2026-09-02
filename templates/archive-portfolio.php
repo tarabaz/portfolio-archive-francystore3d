@@ -21,6 +21,21 @@ $fsp_logo_height = FSP_Settings::get_header_logo_height();
 $fsp_logo_url    = $fsp_logo_id ? wp_get_attachment_image_url( $fsp_logo_id, 'full' ) : '';
 
 /*
+ * Comportamento dello sfondo. La classe la mette il PHP e non il JS
+ * perché lo sfondo fermo è solo CSS: passando dal JavaScript, chi ha lo
+ * script bloccato vedrebbe lo sfondo scorrere e basta. Il fumo invece è
+ * per forza JavaScript, e il suo canvas viene aggiunto dallo script solo
+ * dove serve davvero.
+ */
+$fsp_effect        = FSP_Settings::get_background_effect();
+$fsp_effect_mobile = FSP_Settings::background_effect_on_mobile();
+$fsp_archive_class = 'fsp-archive fsp-archive--bg-' . $fsp_effect;
+
+if ( ! $fsp_effect_mobile ) {
+	$fsp_archive_class .= ' fsp-no-effect-mobile';
+}
+
+/*
  * URL diretto invece di wp_get_attachment_image(): quella funzione
  * aggiunge srcset/sizes e il browser, su finestre strette, scarica una
  * variante più piccola del file. Siccome il CSS usa la dimensione
@@ -100,8 +115,10 @@ if ( is_tax( FSP_Taxonomies::SECTION ) ) {
 </head>
 <body <?php body_class( 'fsp-body fsp-body--archive' ); ?>>
 
-<div class="fsp-archive"
+<div class="<?php echo esc_attr( $fsp_archive_class ); ?>"
 	data-fsp-archive
+	data-bg-effect="<?php echo esc_attr( $fsp_effect ); ?>"
+	data-bg-effect-mobile="<?php echo $fsp_effect_mobile ? '1' : '0'; ?>"
 	data-section-backgrounds="<?php echo esc_attr( wp_json_encode( $fsp_section_backgrounds ) ); ?>"
 	data-home-background="<?php echo esc_url( $fsp_home_bg_url ); ?>">
 
@@ -110,6 +127,9 @@ if ( is_tax( FSP_Taxonomies::SECTION ) ) {
 			<img src="<?php echo esc_url( $fsp_home_bg_url ); ?>" alt="" data-fsp-bg-image>
 		<?php endif; ?>
 	</div>
+
+	<?php // Il canvas del fumo lo crea il JavaScript qui dentro, se l'effetto è attivo. ?>
+	<div class="fsp-smoke" data-fsp-smoke aria-hidden="true"></div>
 
 	<div class="fsp-archive__overlay" aria-hidden="true"></div>
 	<div class="fsp-scanlines" aria-hidden="true"></div>

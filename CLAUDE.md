@@ -121,6 +121,23 @@ L'altezza passa da una variabile CSS inline (`--fsp-logo-height`) e non da un
 `height` diretto, così il CSS può ricalcolarla su schermo stretto. Senza logo si
 stampa il titolo scritto: l'intestazione non è mai vuota.
 
+**Sfondo fermo con `position: fixed` su un elemento, non
+`background-attachment: fixed`.** La seconda su iOS non funziona da anni e dove
+funziona costa di più. Attenzione: `position: fixed` si aggancia al primo
+antenato con `transform`/`filter`/`contain` — se un domani se ne aggiunge uno su
+`.fsp-archive` o `.fsp-single`, lo sfondo si sgancia e torna a scorrere.
+
+**Il fumo animato è un canvas, e costa: tre accorgimenti lo tengono a bada.**
+Lo sbuffo è disegnato una volta sola su un canvas fuori schermo e poi ricopiato
+(ricalcolare venti gradienti radiali per fotogramma è ciò che fa scaldare i
+telefoni); il tetto è 30 fps invece di 60; in scheda non visibile l'animazione si
+ferma. Misurati in Chromium: 30 fps, 0 disegni in secondo piano.
+
+**L'effetto su telefono si spegne in CSS, non in JavaScript.** Deve valere anche
+a script bloccato, ed è proprio lì che conta di più: un telefono che non esegue
+lo script è quasi sempre un telefono lento. Il JS fa il suo controllo in più solo
+per non far partire il canvas.
+
 **Gli sfondi sfumano in basso con `mask-image`, non con un rettangolo
 sovrapposto.** La maschera agisce sull'immagine, quindi la dissolvenza finisce
 esattamente dove finisce la foto, qualunque sia l'altezza del box.

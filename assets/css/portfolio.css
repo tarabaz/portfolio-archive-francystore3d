@@ -133,6 +133,90 @@ body.fsp-no-scroll {
 }
 
 /* --------------------------------------------------------------------
+   SFONDO FERMO E FUMO
+   -------------------------------------------------------------------- */
+
+/*
+ * Sfondo che resta fermo mentre il contenuto scorre.
+ *
+ * Si usa position:fixed su un elemento e non background-attachment:fixed
+ * su uno sfondo CSS: la seconda strada su iOS non funziona da anni, e
+ * dove funziona costa di più perché il browser ridipinge lo sfondo ad
+ * ogni scorrimento.
+ *
+ * L'avvertenza da ricordare: position:fixed si aggancia al primo
+ * antenato con transform, filter o contain, non al viewport. Qui gli
+ * antenati sono solo .fsp-archive / .fsp-single, che non ne hanno — se
+ * un domani si aggiunge un transform lì sopra, lo sfondo si sgancia e
+ * ricomincia a scorrere.
+ */
+.fsp-archive--bg-fixed .fsp-archive__bg,
+.fsp-archive--bg-smoke .fsp-archive__bg,
+.fsp-single--bg-fixed .fsp-single__bg,
+.fsp-single--bg-smoke .fsp-single__bg {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+}
+
+/* Anche il velo va tenuto fermo, o scorrendo si staccherebbe dalla foto
+   che sta scurendo. */
+.fsp-archive--bg-fixed .fsp-archive__overlay,
+.fsp-archive--bg-smoke .fsp-archive__overlay,
+.fsp-single--bg-fixed .fsp-single__overlay,
+.fsp-single--bg-smoke .fsp-single__overlay {
+	position: fixed;
+	inset: 0;
+}
+
+/* Contenitore del canvas del fumo: riempie lo schermo e non intercetta
+   mai i click, o coprirebbe l'intera griglia. */
+.fsp-smoke {
+	position: fixed;
+	inset: 0;
+	z-index: 1;
+	pointer-events: none;
+	overflow: hidden;
+}
+
+.fsp-smoke canvas {
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+/* Il fumo esiste solo dove è stato scelto: altrove il contenitore resta
+   in pagina ma vuoto, e questa regola lo toglie di mezzo del tutto. */
+.fsp-archive:not(.fsp-archive--bg-smoke) .fsp-smoke,
+.fsp-single:not(.fsp-single--bg-smoke) .fsp-smoke {
+	display: none;
+}
+
+/*
+ * Su telefono, quando l'effetto non è stato richiesto: lo sfondo torna a
+ * scorrere con la pagina e il fumo sparisce. La regola sta in una media
+ * query e non nel JavaScript perché deve valere anche a script bloccato,
+ * ed è il caso in cui conta di più — un telefono che non esegue lo
+ * script è quasi sempre un telefono lento.
+ */
+@media (max-width: 700px) {
+	.fsp-no-effect-mobile .fsp-archive__bg,
+	.fsp-no-effect-mobile .fsp-single__bg {
+		position: absolute;
+	}
+
+	.fsp-no-effect-mobile .fsp-archive__overlay,
+	.fsp-no-effect-mobile .fsp-single__overlay {
+		position: absolute;
+	}
+
+	.fsp-no-effect-mobile .fsp-smoke {
+		display: none;
+	}
+}
+
+/* --------------------------------------------------------------------
    ARCHIVIO — sfondo e intestazione
    -------------------------------------------------------------------- */
 
@@ -211,6 +295,7 @@ body.fsp-no-scroll {
 
 .fsp-archive__inner {
 	position: relative;
+	/* Sopra al fumo (z-index 1), che a sua volta sta sopra allo sfondo. */
 	z-index: 2;
 	max-width: 1280px;
 	margin: 0 auto;

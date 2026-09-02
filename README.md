@@ -13,6 +13,8 @@ a un pezzo scrive su Instagram.
   Il pannello dei filtri sta chiuso finché non serve
 - **Logo personalizzabile** — caricabile dalle impostazioni, con altezza
   regolabile in pixel
+- **Sfondo fermo o con fumo animato** — a scelta, con la possibilità di
+  disattivare l'effetto sui telefoni
 - **Pagina indipendente dal tema** — il portfolio ha il suo layout completo,
   cambiare tema non lo tocca
 - **Sfondi a più livelli** — ogni pezzo può avere il suo sfondo, altrimenti

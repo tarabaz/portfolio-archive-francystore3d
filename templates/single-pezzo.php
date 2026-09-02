@@ -53,6 +53,19 @@ while ( have_posts() ) :
 
 	$fsp_prev = get_previous_post();
 	$fsp_next = get_next_post();
+
+	/*
+	 * Stesso comportamento dello sfondo dell'archivio: chi arriva qui ci
+	 * arriva dalla griglia, e trovare lo sfondo fermo di là e in
+	 * movimento di qua sarebbe uno stacco in mezzo alla navigazione.
+	 */
+	$fsp_effect        = FSP_Settings::get_background_effect();
+	$fsp_effect_mobile = FSP_Settings::background_effect_on_mobile();
+	$fsp_single_class  = 'fsp-single fsp-single--bg-' . $fsp_effect;
+
+	if ( ! $fsp_effect_mobile ) {
+		$fsp_single_class .= ' fsp-no-effect-mobile';
+	}
 	?>
 <!DOCTYPE html>
 <html <?php language_attributes(); ?> class="fsp-html">
@@ -65,13 +78,17 @@ while ( have_posts() ) :
 </head>
 <body <?php body_class( 'fsp-body fsp-body--single' ); ?>>
 
-<article class="fsp-single">
+<article class="<?php echo esc_attr( $fsp_single_class ); ?>"
+	data-bg-effect="<?php echo esc_attr( $fsp_effect ); ?>"
+	data-bg-effect-mobile="<?php echo $fsp_effect_mobile ? '1' : '0'; ?>">
 
 	<?php if ( $fsp_bg_url ) : ?>
 		<div class="fsp-single__bg" aria-hidden="true">
 			<img src="<?php echo esc_url( $fsp_bg_url ); ?>" alt="">
 		</div>
 	<?php endif; ?>
+
+	<div class="fsp-smoke" data-fsp-smoke aria-hidden="true"></div>
 
 	<div class="fsp-single__overlay" aria-hidden="true"></div>
 	<div class="fsp-scanlines" aria-hidden="true"></div>
