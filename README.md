@@ -15,6 +15,8 @@ a un pezzo scrive su Instagram.
   regolabile in pixel
 - **Sfondo fermo o con fumo animato** — a scelta, con la possibilità di
   disattivare l'effetto sui telefoni
+- **Logo immerso nel fumo** — volute che passano dietro e davanti al marchio,
+  disegnate senza librerie esterne
 - **Pagina indipendente dal tema** — il portfolio ha il suo layout completo,
   cambiare tema non lo tocca
 - **Sfondi a più livelli** — ogni pezzo può avere il suo sfondo, altrimenti

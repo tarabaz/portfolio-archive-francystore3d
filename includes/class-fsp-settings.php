@@ -45,6 +45,8 @@ class FSP_Settings {
 			'home_background_image'  => 0,
 			'background_effect'      => 'scroll',
 			'background_effect_mobile' => '',
+			'logo_smoke'             => '',
+			'smoke_color'            => '#8fb6c8',
 			'instagram_handle'       => '',
 			'whatsapp_number'        => '',
 			'attribute_suggestions'  => "Alimentazione\nTipo illuminazione\nScala\nBase inclusa\nVerniciatura\nPeso\nPersonalizzabile",
@@ -143,6 +145,26 @@ class FSP_Settings {
 	 */
 	public static function background_effect_on_mobile() {
 		return '1' === (string) self::get( 'background_effect_mobile' );
+	}
+
+	/**
+	 * True se l'intestazione deve immergere il logo nel fumo.
+	 *
+	 * @return bool
+	 */
+	public static function logo_in_smoke() {
+		return '1' === (string) self::get( 'logo_smoke' );
+	}
+
+	/**
+	 * Colore del fumo, in esadecimale.
+	 *
+	 * @return string
+	 */
+	public static function get_smoke_color() {
+		$color = (string) self::get( 'smoke_color' );
+
+		return preg_match( '/^#[0-9a-f]{6}$/i', $color ) ? $color : '#8fb6c8';
 	}
 
 	/**
@@ -355,6 +377,10 @@ class FSP_Settings {
 		// Una casella non spuntata non viene inviata dal browser: l'assenza
 		// vale come "no", non come "lascia com'era".
 		$output['background_effect_mobile'] = ! empty( $input['background_effect_mobile'] ) ? '1' : '';
+		$output['logo_smoke']               = ! empty( $input['logo_smoke'] ) ? '1' : '';
+
+		$color                  = isset( $input['smoke_color'] ) ? sanitize_hex_color( $input['smoke_color'] ) : '';
+		$output['smoke_color'] = $color ? $color : '#8fb6c8';
 
 		/*
 		 * Altezza del logo entro limiti ragionevoli: sotto i 20px sarebbe
@@ -463,6 +489,35 @@ class FSP_Settings {
 								value="<?php echo esc_attr( (string) $settings['header_logo_height'] ); ?>"> px
 							<p class="description">
 								<?php esc_html_e( 'Si imposta l\'altezza e non la larghezza: è l\'altezza a decidere quanto spazio il logo si prende prima della griglia, e la larghezza segue da sé qualunque siano le proporzioni del file. Fra 20 e 400 px.', 'francystore-portfolio' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row"><?php esc_html_e( 'Logo immerso nel fumo', 'francystore-portfolio' ); ?></th>
+						<td>
+							<label>
+								<input type="checkbox"
+									name="<?php echo esc_attr( self::OPTION_NAME ); ?>[logo_smoke]"
+									value="1"
+									<?php checked( self::logo_in_smoke() ); ?>>
+								<?php esc_html_e( 'Fai passare volute di fumo dietro e davanti al logo', 'francystore-portfolio' ); ?>
+							</label>
+							<p class="description">
+								<?php esc_html_e( 'Il logo viene disegnato in mezzo al fumo: una parte delle volute gli passa dietro e una davanti, sommandosi alla luce come in una foto in controluce. Funziona anche senza logo, sul titolo scritto. Segue la stessa scelta fatta sopra per i telefoni.', 'francystore-portfolio' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<label for="fsp-smoke-color"><?php esc_html_e( 'Colore del fumo', 'francystore-portfolio' ); ?></label>
+						</th>
+						<td>
+							<input type="color"
+								id="fsp-smoke-color"
+								name="<?php echo esc_attr( self::OPTION_NAME ); ?>[smoke_color]"
+								value="<?php echo esc_attr( self::get_smoke_color() ); ?>">
+							<p class="description">
+								<?php esc_html_e( 'Vale sia per il fumo dell\'intestazione sia per quello di sfondo. Le volute si sommano fra loro: un colore già chiaro tende a bruciare in bianco dove si sovrappongono, meglio partire da una tinta media.', 'francystore-portfolio' ); ?>
 							</p>
 						</td>
 					</tr>

@@ -27,6 +27,8 @@ $fsp_logo_url    = $fsp_logo_id ? wp_get_attachment_image_url( $fsp_logo_id, 'fu
  * per forza JavaScript, e il suo canvas viene aggiunto dallo script solo
  * dove serve davvero.
  */
+$fsp_logo_smoke    = FSP_Settings::logo_in_smoke();
+$fsp_smoke_color   = FSP_Settings::get_smoke_color();
 $fsp_effect        = FSP_Settings::get_background_effect();
 $fsp_effect_mobile = FSP_Settings::background_effect_on_mobile();
 $fsp_archive_class = 'fsp-archive fsp-archive--bg-' . $fsp_effect;
@@ -119,6 +121,7 @@ if ( is_tax( FSP_Taxonomies::SECTION ) ) {
 	data-fsp-archive
 	data-bg-effect="<?php echo esc_attr( $fsp_effect ); ?>"
 	data-bg-effect-mobile="<?php echo $fsp_effect_mobile ? '1' : '0'; ?>"
+	data-smoke-color="<?php echo esc_attr( $fsp_smoke_color ); ?>"
 	data-section-backgrounds="<?php echo esc_attr( wp_json_encode( $fsp_section_backgrounds ) ); ?>"
 	data-home-background="<?php echo esc_url( $fsp_home_bg_url ); ?>">
 
@@ -149,14 +152,31 @@ if ( is_tax( FSP_Taxonomies::SECTION ) ) {
 			 * proporzioni su schermo stretto, dove il logo va rimpicciolito.
 			 */
 			?>
-			<?php if ( $fsp_logo_url ) : ?>
-				<h1 class="fsp-archive__logo" style="--fsp-logo-height: <?php echo esc_attr( (string) $fsp_logo_height ); ?>px">
-					<img src="<?php echo esc_url( $fsp_logo_url ); ?>"
-						alt="<?php echo esc_attr( $fsp_settings['header_title'] ? $fsp_settings['header_title'] : get_bloginfo( 'name' ) ); ?>">
-				</h1>
-			<?php else : ?>
-				<h1 class="fsp-archive__title fsp-display"><?php echo esc_html( $fsp_settings['header_title'] ); ?></h1>
-			<?php endif; ?>
+			<?php
+			/*
+			 * Il marchio sta dentro un contenitore proprio perché il fumo
+			 * dell'intestazione ha bisogno di un'area su cui lavorare: il
+			 * JS ci infila un canvas, ridisegna lì dentro logo e volute, e
+			 * solo a quel punto nasconde l'originale.
+			 *
+			 * Finché il canvas non è pronto — script fermo, immagine non
+			 * ancora scaricata, effetto spento — quello che si vede è
+			 * questo logo, normalissimo. L'intestazione non è mai vuota in
+			 * attesa di qualcosa.
+			 */
+			?>
+			<div class="fsp-brand<?php echo $fsp_logo_smoke ? ' fsp-brand--smoke' : ''; ?>"
+				<?php if ( $fsp_logo_smoke ) : ?>data-fsp-brand-smoke<?php endif; ?>>
+				<?php if ( $fsp_logo_url ) : ?>
+					<h1 class="fsp-archive__logo" style="--fsp-logo-height: <?php echo esc_attr( (string) $fsp_logo_height ); ?>px">
+						<img src="<?php echo esc_url( $fsp_logo_url ); ?>"
+							alt="<?php echo esc_attr( $fsp_settings['header_title'] ? $fsp_settings['header_title'] : get_bloginfo( 'name' ) ); ?>"
+							data-fsp-brand-image>
+					</h1>
+				<?php else : ?>
+					<h1 class="fsp-archive__title fsp-display" data-fsp-brand-text><?php echo esc_html( $fsp_settings['header_title'] ); ?></h1>
+				<?php endif; ?>
+			</div>
 			<?php if ( $fsp_settings['header_subtitle'] ) : ?>
 				<div class="fsp-archive__subtitle"><?php echo esc_html( $fsp_settings['header_subtitle'] ); ?></div>
 			<?php endif; ?>

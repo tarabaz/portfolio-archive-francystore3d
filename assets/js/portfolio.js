@@ -572,6 +572,155 @@
 	/** Larghezza sotto la quale si considera di essere su un telefono. */
 	var MOBILE_WIDTH = 700;
 
+	/* ------------------------------------------------------------------
+	 * Texture del fumo, disegnata via codice
+	 * ------------------------------------------------------------------ */
+
+	/**
+	 * Rumore deterministico a partire da due coordinate.
+	 *
+	 * Math.imul e non l'operatore * perché in JavaScript i numeri sono a
+	 * virgola mobile: moltiplicando interi grandi si perderebbero le
+	 * cifre basse, cioè proprio quelle da cui dipende la casualità.
+	 *
+	 * @param {number} x    Coordinata.
+	 * @param {number} y    Coordinata.
+	 * @param {number} seed Variante.
+	 * @return {number} Fra 0 e 1.
+	 */
+	function hash2( x, y, seed ) {
+		var h = Math.imul( x, 374761393 ) + Math.imul( y, 668265263 ) + Math.imul( seed, 1442695041 );
+
+		h = Math.imul( h ^ ( h >>> 13 ), 1274126177 );
+
+		return ( ( h ^ ( h >>> 16 ) ) >>> 0 ) / 4294967295;
+	}
+
+	/**
+	 * Rumore continuo: si prendono i valori casuali sui quattro angoli
+	 * della cella e si interpola fra loro. L'interpolazione è addolcita
+	 * con una curva a S, perché quella lineare lascia visibili gli spigoli
+	 * della griglia e il fumo sembrerebbe fatto di rombi.
+	 *
+	 * @param {number} x    Coordinata.
+	 * @param {number} y    Coordinata.
+	 * @param {number} seed Variante.
+	 * @return {number} Fra 0 e 1.
+	 */
+	function valueNoise( x, y, seed ) {
+		var xi = Math.floor( x );
+		var yi = Math.floor( y );
+		var xf = x - xi;
+		var yf = y - yi;
+
+		var sx = xf * xf * ( 3 - 2 * xf );
+		var sy = yf * yf * ( 3 - 2 * yf );
+
+		var a = hash2( xi, yi, seed );
+		var b = hash2( xi + 1, yi, seed );
+		var c = hash2( xi, yi + 1, seed );
+		var d = hash2( xi + 1, yi + 1, seed );
+
+		var top = a + ( b - a ) * sx;
+		var bottom = c + ( d - c ) * sx;
+
+		return top + ( bottom - top ) * sy;
+	}
+
+	/**
+	 * Disegna una voluta di fumo su un canvas fuori schermo.
+	 *
+	 * Il pen di riferimento caricava un PNG da un server esterno. Qui la
+	 * si genera: niente file da scaricare, niente immagine di terzi da
+	 * ridistribuire nel plugin, e la densità si regola con dei numeri
+	 * invece che riaprendo Photoshop.
+	 *
+	 * Quattro passate di rumore a frequenza doppia e peso dimezzato (il
+	 * cosiddetto rumore frattale) danno le sfilacciature: una passata
+	 * sola sarebbe una nuvola tonda e regolare, che non somiglia a niente.
+	 * Alla fine si moltiplica per una sfumatura circolare, così i bordi
+	 * svaniscono e le volute si fondono fra loro invece di mostrare il
+	 * quadrato che le contiene.
+	 *
+	 * @param {Array}  rgb  Colore del fumo, tre componenti 0-255.
+	 * @param {number} seed Variante, per non avere tutte le volute uguali.
+	 * @return {HTMLCanvasElement}
+	 */
+	function createSmokeSprite( rgb, seed ) {
+		var size = 192;
+		var canvas = document.createElement( 'canvas' );
+		var ctx = canvas.getContext( '2d' );
+
+		canvas.width = size;
+		canvas.height = size;
+
+		var image = ctx.createImageData( size, size );
+		var data = image.data;
+		var half = size / 2;
+
+		for ( var y = 0; y < size; y++ ) {
+			for ( var x = 0; x < size; x++ ) {
+				var value = 0;
+				var amplitude = .5;
+				var frequency = 3 / size;
+
+				for ( var octave = 0; octave < 4; octave++ ) {
+					value += valueNoise( x * frequency, y * frequency, seed + octave ) * amplitude;
+					frequency *= 2;
+					amplitude *= .5;
+				}
+
+				// Sfumatura circolare: 1 al centro, 0 sul bordo.
+				var dx = ( x - half ) / half;
+				var dy = ( y - half ) / half;
+				var distance = Math.sqrt( dx * dx + dy * dy );
+				var falloff = Math.max( 0, 1 - distance );
+
+				falloff *= falloff;
+
+				// Il contrasto sul rumore stacca le volute dal grigio piatto.
+				var alpha = Math.max( 0, ( value - .38 ) * 2.6 ) * falloff;
+				var index = ( y * size + x ) * 4;
+
+				data[ index ] = rgb[ 0 ];
+				data[ index + 1 ] = rgb[ 1 ];
+				data[ index + 2 ] = rgb[ 2 ];
+				data[ index + 3 ] = Math.min( 255, alpha * 255 );
+			}
+		}
+
+		ctx.putImageData( image, 0, 0 );
+
+		return canvas;
+	}
+
+	/**
+	 * Converte un colore esadecimale nelle tre componenti.
+	 *
+	 * @param {string} hex Per esempio "#8fb6c8".
+	 * @return {Array}
+	 */
+	function hexToRgb( hex ) {
+		var match = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec( String( hex || '' ) );
+
+		if ( ! match ) {
+			return [ 143, 182, 200 ];
+		}
+
+		return [ parseInt( match[ 1 ], 16 ), parseInt( match[ 2 ], 16 ), parseInt( match[ 3 ], 16 ) ];
+	}
+
+	/**
+	 * Colore del fumo scelto nelle impostazioni.
+	 *
+	 * @return {Array}
+	 */
+	function smokeColor() {
+		var root = document.querySelector( '[data-smoke-color]' );
+
+		return hexToRgb( root ? root.getAttribute( 'data-smoke-color' ) : '' );
+	}
+
 	/**
 	 * Volute di fumo lente sopra allo sfondo, disegnate su un canvas.
 	 *
@@ -619,7 +768,7 @@
 
 		host.appendChild( canvas );
 
-		var puff = buildPuff();
+		var puff = createSmokeSprite( smokeColor(), 11 );
 		var puffs = [];
 		var width = 0;
 		var height = 0;
@@ -645,32 +794,6 @@
 			canvas.style.height = height + 'px';
 
 			ctx.setTransform( ratio, 0, 0, ratio, 0, 0 );
-		}
-
-		/**
-		 * Disegna una volta sola uno sbuffo sfumato su un canvas separato,
-		 * da ricopiare poi ad ogni fotogramma.
-		 *
-		 * @return {HTMLCanvasElement}
-		 */
-		function buildPuff() {
-			var size = 256;
-			var off = document.createElement( 'canvas' );
-			var octx = off.getContext( '2d' );
-
-			off.width = size;
-			off.height = size;
-
-			var gradient = octx.createRadialGradient( size / 2, size / 2, 0, size / 2, size / 2, size / 2 );
-
-			gradient.addColorStop( 0, 'rgba(216, 219, 222, .16)' );
-			gradient.addColorStop( .45, 'rgba(216, 219, 222, .06)' );
-			gradient.addColorStop( 1, 'rgba(216, 219, 222, 0)' );
-
-			octx.fillStyle = gradient;
-			octx.fillRect( 0, 0, size, size );
-
-			return off;
 		}
 
 		function seed() {
@@ -776,6 +899,297 @@
 	}
 
 	/* ------------------------------------------------------------------
+	 * Logo immerso nel fumo
+	 * ------------------------------------------------------------------ */
+
+	/**
+	 * Ridisegna il marchio dentro un canvas con delle volute di fumo che
+	 * gli passano metà dietro e metà davanti.
+	 *
+	 * È lo stesso principio dell'effetto in three.js da cui nasce: dei
+	 * piani con sopra una texture di fumo, sparsi in profondità attorno al
+	 * titolo, che ruotano lentamente su sé stessi. Quello che nel 3D fa la
+	 * coordinata z — chi sta davanti e chi dietro — qui lo fa l'ordine di
+	 * disegno: prima le volute dietro, poi il marchio, poi quelle davanti.
+	 * La profondità apparente la danno le dimensioni, più grandi per le
+	 * volute vicine.
+	 *
+	 * La somma dei colori, che nel 3D era l'AdditiveBlending, qui è
+	 * 'lighter': i colori si sommano invece di coprirsi, quindi dove due
+	 * volute si sovrappongono la luce cresce.
+	 */
+	function initBrandSmoke() {
+		var host = document.querySelector( '[data-fsp-brand-smoke]' );
+
+		if ( ! host || prefersReducedMotion() ) {
+			return;
+		}
+
+		var root = host.closest( '[data-bg-effect-mobile]' );
+		var allowMobile = root && '1' === root.getAttribute( 'data-bg-effect-mobile' );
+
+		if ( window.innerWidth <= MOBILE_WIDTH && ! allowMobile ) {
+			return;
+		}
+
+		var image = host.querySelector( '[data-fsp-brand-image]' );
+		var textEl = host.querySelector( '[data-fsp-brand-text]' );
+
+		if ( ! image && ! textEl ) {
+			return;
+		}
+
+		// Con un logo si aspetta che sia scaricato: disegnare un'immagine
+		// non ancora pronta non produce nulla e il marchio sparirebbe.
+		if ( image && ! image.complete ) {
+			image.addEventListener( 'load', function () {
+				initBrandSmoke();
+			}, { once: true } );
+
+			return;
+		}
+
+		var canvas = document.createElement( 'canvas' );
+		var ctx = canvas.getContext( '2d' );
+
+		if ( ! ctx ) {
+			return;
+		}
+
+		canvas.className = 'fsp-brand__canvas';
+		host.appendChild( canvas );
+
+		var rgb = smokeColor();
+		var sprites = [ createSmokeSprite( rgb, 3 ), createSmokeSprite( rgb, 17 ), createSmokeSprite( rgb, 41 ) ];
+		var puffs = [];
+		var width = 0;
+		var height = 0;
+		var ratio = 1;
+		var running = true;
+		var lastFrame = 0;
+		var textStyle = null;
+
+		if ( textEl ) {
+			var computed = window.getComputedStyle( textEl );
+
+			textStyle = {
+				font: computed.fontWeight + ' ' + computed.fontSize + ' ' + computed.fontFamily,
+				color: computed.color,
+				spacing: parseFloat( computed.letterSpacing ) || 0,
+				text: textEl.textContent.trim()
+			};
+		}
+
+		function resize() {
+			width = host.offsetWidth;
+			height = host.offsetHeight;
+
+			if ( ! width || ! height ) {
+				return false;
+			}
+
+			ratio = Math.min( window.devicePixelRatio || 1, 2 );
+
+			canvas.width = Math.round( width * ratio );
+			canvas.height = Math.round( height * ratio );
+
+			ctx.setTransform( ratio, 0, 0, ratio, 0, 0 );
+
+			return true;
+		}
+
+		function seed() {
+			puffs = [];
+
+			var count = width < 700 ? 14 : 22;
+
+			for ( var i = 0; i < count; i++ ) {
+				puffs.push( makePuff() );
+			}
+
+			// Metà dietro e metà davanti: è la divisione che crea
+			// l'impressione che il marchio stia dentro al fumo e non sopra.
+			puffs.forEach( function ( p, index ) {
+				p.front = index % 2 === 1;
+			} );
+		}
+
+		function makePuff() {
+			// Le volute davanti sono più grandi e più tenui, come se fossero
+			// più vicine all'obiettivo: è ciò che dà la sensazione di
+			// profondità senza avere una vera terza dimensione.
+			var size = height * ( 1.1 + Math.random() * 1.4 );
+
+			return {
+				x: Math.random() * width,
+				y: height * ( .2 + Math.random() * .6 ),
+				size: size,
+				angle: Math.random() * Math.PI * 2,
+				spin: ( Math.random() - .5 ) * .18,
+				driftX: ( Math.random() - .5 ) * 14,
+				driftY: -( 2 + Math.random() * 6 ),
+				alpha: .18 + Math.random() * .3,
+				sprite: sprites[ Math.floor( Math.random() * sprites.length ) ],
+				front: false
+			};
+		}
+
+		function drawPuff( p ) {
+			ctx.save();
+			ctx.globalAlpha = p.alpha;
+			ctx.translate( p.x, p.y );
+			ctx.rotate( p.angle );
+			ctx.drawImage( p.sprite, -p.size / 2, -p.size / 2, p.size, p.size );
+			ctx.restore();
+		}
+
+		function drawBrand() {
+			ctx.globalCompositeOperation = 'source-over';
+			ctx.globalAlpha = 1;
+
+			if ( image ) {
+				var w = image.offsetWidth;
+				var h = image.offsetHeight;
+
+				ctx.drawImage( image, ( width - w ) / 2, ( height - h ) / 2, w, h );
+
+				return;
+			}
+
+			ctx.font = textStyle.font;
+			ctx.fillStyle = textStyle.color;
+			ctx.textAlign = 'center';
+			ctx.textBaseline = 'middle';
+
+			// La spaziatura fra le lettere non esiste come proprietà del
+			// canvas: si disegna lettera per lettera aggiungendola a mano,
+			// altrimenti il titolo dentro al canvas risulterebbe più stretto
+			// di com'era in pagina e si vedrebbe il salto.
+			if ( ! textStyle.spacing ) {
+				ctx.fillText( textStyle.text, width / 2, height / 2 );
+				return;
+			}
+
+			var letters = textStyle.text.split( '' );
+			var total = 0;
+			var widths = letters.map( function ( letter ) {
+				var w = ctx.measureText( letter ).width + textStyle.spacing;
+				total += w;
+				return w;
+			} );
+
+			var cursor = ( width - total ) / 2;
+
+			ctx.textAlign = 'left';
+
+			letters.forEach( function ( letter, index ) {
+				ctx.fillText( letter, cursor, height / 2 );
+				cursor += widths[ index ];
+			} );
+		}
+
+		function frame( now ) {
+			if ( ! running ) {
+				return;
+			}
+
+			window.requestAnimationFrame( frame );
+
+			if ( now - lastFrame < 33 ) {
+				return;
+			}
+
+			var elapsed = lastFrame ? Math.min( ( now - lastFrame ) / 1000, .2 ) : 0;
+			lastFrame = now;
+
+			ctx.setTransform( ratio, 0, 0, ratio, 0, 0 );
+			ctx.clearRect( 0, 0, width, height );
+
+			var i;
+			var p;
+
+			for ( i = 0; i < puffs.length; i++ ) {
+				p = puffs[ i ];
+
+				p.angle += p.spin * elapsed;
+				p.x += p.driftX * elapsed;
+				p.y += p.driftY * elapsed;
+
+				// Uscita dai bordi: si rientra dal lato opposto, così la
+				// scena non si svuota mai.
+				if ( p.y + p.size / 2 < 0 ) {
+					p.y = height + p.size / 2;
+				}
+
+				if ( p.x - p.size / 2 > width ) {
+					p.x = -p.size / 2;
+				} else if ( p.x + p.size / 2 < 0 ) {
+					p.x = width + p.size / 2;
+				}
+			}
+
+			// 1. Le volute dietro.
+			ctx.globalCompositeOperation = 'lighter';
+
+			for ( i = 0; i < puffs.length; i++ ) {
+				if ( ! puffs[ i ].front ) {
+					drawPuff( puffs[ i ] );
+				}
+			}
+
+			// 2. Il marchio.
+			drawBrand();
+
+			// 3. Le volute davanti, che si sommano alla sua luce.
+			ctx.globalCompositeOperation = 'lighter';
+
+			for ( i = 0; i < puffs.length; i++ ) {
+				if ( puffs[ i ].front ) {
+					drawPuff( puffs[ i ] );
+				}
+			}
+
+			ctx.globalAlpha = 1;
+			ctx.globalCompositeOperation = 'source-over';
+		}
+
+		if ( ! resize() ) {
+			return;
+		}
+
+		seed();
+
+		// L'originale si nasconde solo ora: fino a questo punto era lui a
+		// tenere occupata l'intestazione, ed è quello che resta a chi ha lo
+		// script bloccato.
+		host.classList.add( 'is-painted' );
+
+		window.requestAnimationFrame( frame );
+
+		var resizeTimer = null;
+
+		window.addEventListener( 'resize', function () {
+			window.clearTimeout( resizeTimer );
+			resizeTimer = window.setTimeout( function () {
+				if ( resize() ) {
+					seed();
+				}
+			}, 200 );
+		} );
+
+		document.addEventListener( 'visibilitychange', function () {
+			if ( document.hidden ) {
+				running = false;
+				return;
+			}
+
+			running = true;
+			lastFrame = 0;
+			window.requestAnimationFrame( frame );
+		} );
+	}
+
+	/* ------------------------------------------------------------------
 	 * Copia del codice pezzo
 	 * ------------------------------------------------------------------ */
 
@@ -855,6 +1269,7 @@
 		initLightbox();
 		initCopy();
 		initSmoke();
+		initBrandSmoke();
 	}
 
 	if ( 'loading' === document.readyState ) {

@@ -317,6 +317,53 @@ body.fsp-no-scroll {
 }
 
 /*
+ * Contenitore del marchio.
+ *
+ * Con l'effetto attivo riceve dei margini generosi: il canvas prende
+ * l'area di questo blocco, e senza spazio attorno al logo le volute
+ * verrebbero tagliate di netto sul suo bordo invece di sfumare.
+ */
+.fsp-brand {
+	position: relative;
+}
+
+.fsp-brand--smoke {
+	padding: clamp(30px, 6vw, 70px) 0;
+}
+
+/*
+ * Il canvas è un rettangolo, e le volute che arrivano al suo bordo ci
+ * sbattono contro tagliandosi di netto: si vedeva la cornice squadrata
+ * del riquadro in mezzo alla pagina. La maschera ovale fa svanire il
+ * fumo prima che ci arrivi, così sembra disperdersi nell'aria invece di
+ * finire dentro una scatola.
+ */
+.fsp-brand__canvas {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	pointer-events: none;
+	-webkit-mask-image: radial-gradient(ellipse 62% 58% at 50% 50%, #000 35%, transparent 100%);
+	mask-image: radial-gradient(ellipse 62% 58% at 50% 50%, #000 35%, transparent 100%);
+}
+
+/*
+ * Il marchio originale sparisce solo quando il canvas ha davvero
+ * disegnato: la classe la mette il JavaScript alla fine del suo lavoro.
+ * Si usa opacity e non display:none perché il canvas si dimensiona su
+ * questo blocco e legge da qui quanto è grande il logo — togliendolo dal
+ * flusso, non ci sarebbe più niente da misurare.
+ *
+ * Resta leggibile dai lettori di schermo e dai motori di ricerca, che
+ * dal canvas non ricaverebbero nulla.
+ */
+.fsp-brand--smoke.is-painted .fsp-archive__logo,
+.fsp-brand--smoke.is-painted .fsp-archive__title {
+	opacity: 0;
+}
+
+/*
  * Logo al posto del titolo. L'altezza arriva dalle impostazioni come
  * variabile inline; su schermo stretto si scende al 70% di quel valore,
  * perché un logo pensato per il desktop occuperebbe altrimenti mezza

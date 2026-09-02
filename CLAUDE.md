@@ -127,6 +127,29 @@ funziona costa di più. Attenzione: `position: fixed` si aggancia al primo
 antenato con `transform`/`filter`/`contain` — se un domani se ne aggiunge uno su
 `.fsp-archive` o `.fsp-single`, lo sfondo si sgancia e torna a scorrere.
 
+**L'effetto "logo nel fumo" ricrea in canvas 2D il pen three.js che Valerio
+voleva** (https://codepen.io/teolitto/pen/KwOVvL — quel codice non gira più: usa
+`THREE.CubeGeometry` e `THREE.ImageUtils`, rimossi da three.js). Quello che nel 3D
+faceva la coordinata z lo fa qui l'ordine di disegno: volute dietro → marchio →
+volute davanti; l'`AdditiveBlending` diventa `globalCompositeOperation =
+'lighter'`. Costo: zero KB, contro i ~150 KB compressi di three.js.
+
+**La texture del fumo è generata via codice** (rumore frattale a quattro ottave
+per le sfilacciature, moltiplicato per una sfumatura circolare perché i bordi
+svaniscano). Quella del pen sta su un server di terzi e non è ridistribuibile.
+
+**Il canvas del marchio ha una maschera ovale sui bordi.** Senza, le volute si
+tagliano di squadro sul bordo del rettangolo e si vede la cornice del canvas in
+mezzo alla pagina.
+
+**Il marchio originale resta in pagina e viene nascosto con `opacity: 0` solo
+quando il canvas ha disegnato** (classe `is-painted` messa dal JS a lavoro
+finito). Non `display: none`: il canvas si dimensiona su quel blocco e legge da
+lì quanto è grande il logo. Così senza JavaScript, con effetto spento o con
+immagine non ancora scaricata, l'intestazione non è mai vuota — e il testo resta
+leggibile da lettori di schermo e motori di ricerca, che dal canvas non
+ricaverebbero nulla.
+
 **Il fumo animato è un canvas, e costa: tre accorgimenti lo tengono a bada.**
 Lo sbuffo è disegnato una volta sola su un canvas fuori schermo e poi ricopiato
 (ricalcolare venti gradienti radiali per fotogramma è ciò che fa scaldare i
