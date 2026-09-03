@@ -113,9 +113,15 @@ class FSP_CPT {
 		$slug = self::get_slug();
 
 		$labels = array(
-			'name'                  => __( 'Portfolio', 'francystore-portfolio' ),
+			'name'                  => __( 'Francy Portfolio', 'francystore-portfolio' ),
 			'singular_name'         => __( 'Pezzo', 'francystore-portfolio' ),
-			'menu_name'             => __( 'Portfolio', 'francystore-portfolio' ),
+			/*
+			 * È la voce nella barra laterale di wp-admin. Solo un'etichetta:
+			 * lo slug interno del post type, i prefissi e l'indirizzo
+			 * pubblico restano quelli, perché stanno nel database e nelle
+			 * regole degli indirizzi.
+			 */
+			'menu_name'             => __( 'Francy Portfolio', 'francystore-portfolio' ),
 			'name_admin_bar'        => __( 'Pezzo', 'francystore-portfolio' ),
 			'add_new'               => __( 'Aggiungi pezzo', 'francystore-portfolio' ),
 			'add_new_item'          => __( 'Aggiungi nuovo pezzo', 'francystore-portfolio' ),
