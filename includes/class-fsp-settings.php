@@ -57,6 +57,10 @@ class FSP_Settings {
 			'instagram_handle'       => '',
 			'whatsapp_number'        => '',
 			'attribute_suggestions'  => "Alimentazione\nTipo illuminazione\nScala\nBase inclusa\nVerniciatura\nPeso\nPersonalizzabile",
+			'footer_email'           => '',
+			'footer_privacy_url'     => '',
+			'footer_cookie_url'      => '',
+			'footer_owner'           => '',
 		);
 	}
 
@@ -315,6 +319,57 @@ class FSP_Settings {
 	}
 
 	/**
+	 * Email di contatto mostrata nella barra in fondo alla pagina.
+	 *
+	 * @return string Vuota se non impostata: in quel caso la parte
+	 *                sinistra della barra resta vuota.
+	 */
+	public static function get_footer_email() {
+		return sanitize_email( (string) self::get( 'footer_email' ) );
+	}
+
+	/**
+	 * Indirizzo dell'informativa privacy.
+	 *
+	 * Se non impostato si ripiega su quella dichiarata in WordPress
+	 * (Impostazioni > Privacy): è già lì, ed è l'unica che il sito
+	 * considera ufficiale.
+	 *
+	 * @return string
+	 */
+	public static function get_footer_privacy_url() {
+		$url = (string) self::get( 'footer_privacy_url' );
+
+		return $url ? $url : (string) get_privacy_policy_url();
+	}
+
+	/**
+	 * Indirizzo dell'informativa cookie.
+	 *
+	 * In mancanza punta alla stessa pagina della privacy: sui siti
+	 * piccoli le due informative stanno quasi sempre nello stesso
+	 * documento, e un link rotto sarebbe peggio di un link ripetuto.
+	 *
+	 * @return string
+	 */
+	public static function get_footer_cookie_url() {
+		$url = (string) self::get( 'footer_cookie_url' );
+
+		return $url ? $url : self::get_footer_privacy_url();
+	}
+
+	/**
+	 * Intestatario del copyright.
+	 *
+	 * @return string Nome del sito se non impostato.
+	 */
+	public static function get_footer_owner() {
+		$owner = trim( (string) self::get( 'footer_owner' ) );
+
+		return $owner ? $owner : (string) get_bloginfo( 'name' );
+	}
+
+	/**
 	 * Dopo il salvataggio: rigenera le rewrite rules se è cambiato lo
 	 * slug e invita i plugin di cache a rigenerare le pagine.
 	 *
@@ -481,6 +536,11 @@ class FSP_Settings {
 		$output['header_logo_height'] = $logo_height ? min( 400, max( 20, $logo_height ) ) : 90;
 		$output['whatsapp_number']       = isset( $input['whatsapp_number'] ) ? preg_replace( '/\D+/', '', (string) $input['whatsapp_number'] ) : '';
 		$output['attribute_suggestions']  = isset( $input['attribute_suggestions'] ) ? sanitize_textarea_field( $input['attribute_suggestions'] ) : '';
+
+		$output['footer_email']       = isset( $input['footer_email'] ) ? sanitize_email( $input['footer_email'] ) : '';
+		$output['footer_privacy_url'] = isset( $input['footer_privacy_url'] ) ? esc_url_raw( $input['footer_privacy_url'] ) : '';
+		$output['footer_cookie_url']  = isset( $input['footer_cookie_url'] ) ? esc_url_raw( $input['footer_cookie_url'] ) : '';
+		$output['footer_owner']       = isset( $input['footer_owner'] ) ? sanitize_text_field( $input['footer_owner'] ) : '';
 
 		return $output;
 	}
@@ -807,6 +867,77 @@ class FSP_Settings {
 								placeholder="39XXXXXXXXXX">
 							<p class="description">
 								<?php esc_html_e( 'In formato internazionale, senza + e senza spazi. Se lo compili, accanto al pulsante Instagram compare anche quello WhatsApp — che a differenza di Instagram apre la chat con il messaggio già scritto, quindi converte meglio. Lascia vuoto per non mostrarlo.', 'francystore-portfolio' ); ?>
+							</p>
+						</td>
+					</tr>
+				</table>
+
+				<h2 class="title"><?php esc_html_e( 'Barra in fondo alla pagina', 'francystore-portfolio' ); ?></h2>
+				<p class="description fsp-settings__intro">
+					<?php esc_html_e( 'Le pagine del portfolio non passano dal footer del tema, quindi i link di servizio vanno indicati qui. Ogni campo lasciato vuoto ha un ripiego: nessuno di questi è obbligatorio.', 'francystore-portfolio' ); ?>
+				</p>
+
+				<table class="form-table" role="presentation">
+					<tr>
+						<th scope="row">
+							<label for="fsp-footer-email"><?php esc_html_e( 'Email di contatto', 'francystore-portfolio' ); ?></label>
+						</th>
+						<td>
+							<input type="email"
+								id="fsp-footer-email"
+								class="regular-text"
+								name="<?php echo esc_attr( self::OPTION_NAME ); ?>[footer_email]"
+								value="<?php echo esc_attr( (string) $settings['footer_email'] ); ?>"
+								placeholder="info@francystore3d.it">
+							<p class="description">
+								<?php esc_html_e( 'Mostrata a sinistra nella barra, come indirizzo cliccabile. Lasciandola vuota quella parte resta vuota.', 'francystore-portfolio' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<label for="fsp-footer-privacy"><?php esc_html_e( 'Indirizzo Privacy Policy', 'francystore-portfolio' ); ?></label>
+						</th>
+						<td>
+							<input type="url"
+								id="fsp-footer-privacy"
+								class="regular-text"
+								name="<?php echo esc_attr( self::OPTION_NAME ); ?>[footer_privacy_url]"
+								value="<?php echo esc_attr( (string) $settings['footer_privacy_url'] ); ?>"
+								placeholder="https://www.francystore3d.it/privacy-policy/">
+							<p class="description">
+								<?php esc_html_e( 'Se lo lasci vuoto viene usata la pagina che hai dichiarato in Impostazioni > Privacy. Se non c\'è nemmeno quella, il link non compare.', 'francystore-portfolio' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<label for="fsp-footer-cookie"><?php esc_html_e( 'Indirizzo Cookie Policy', 'francystore-portfolio' ); ?></label>
+						</th>
+						<td>
+							<input type="url"
+								id="fsp-footer-cookie"
+								class="regular-text"
+								name="<?php echo esc_attr( self::OPTION_NAME ); ?>[footer_cookie_url]"
+								value="<?php echo esc_attr( (string) $settings['footer_cookie_url'] ); ?>">
+							<p class="description">
+								<?php esc_html_e( 'Se lo lasci vuoto punta alla stessa pagina della privacy: spesso le due informative stanno nello stesso documento.', 'francystore-portfolio' ); ?>
+							</p>
+						</td>
+					</tr>
+					<tr>
+						<th scope="row">
+							<label for="fsp-footer-owner"><?php esc_html_e( 'Intestatario del copyright', 'francystore-portfolio' ); ?></label>
+						</th>
+						<td>
+							<input type="text"
+								id="fsp-footer-owner"
+								class="regular-text"
+								name="<?php echo esc_attr( self::OPTION_NAME ); ?>[footer_owner]"
+								value="<?php echo esc_attr( (string) $settings['footer_owner'] ); ?>"
+								placeholder="Francystore3D">
+							<p class="description">
+								<?php esc_html_e( 'Il nome dopo il simbolo ©. Vuoto, viene usato il nome del sito. L\'anno è sempre quello corrente e si aggiorna da solo.', 'francystore-portfolio' ); ?>
 							</p>
 						</td>
 					</tr>

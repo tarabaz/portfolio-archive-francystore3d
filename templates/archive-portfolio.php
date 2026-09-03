@@ -334,6 +334,12 @@ if ( is_tax( FSP_Taxonomies::SECTION ) ) {
 	</div>
 </div>
 
+<?php
+// Fuori da .fsp-archive: appoggiata sul fondo pagina non deve competere
+// con gli z-index dei livelli dello sfondo, che sono fissi e a schermo pieno.
+require FSP_PLUGIN_DIR . 'templates/parts/footer.php';
+?>
+
 <?php wp_footer(); ?>
 </body>
 </html>

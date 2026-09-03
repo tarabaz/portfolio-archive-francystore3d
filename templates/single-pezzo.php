@@ -309,6 +309,11 @@ while ( have_posts() ) :
 	<img src="" alt="" data-fsp-lightbox-image>
 </div>
 
+<?php
+// Fuori da .fsp-single, per lo stesso motivo dell'archivio.
+require FSP_PLUGIN_DIR . 'templates/parts/footer.php';
+?>
+
 <?php wp_footer(); ?>
 </body>
 </html>

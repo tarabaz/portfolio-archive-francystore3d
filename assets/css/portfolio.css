@@ -1383,3 +1383,66 @@ body.fsp-no-scroll {
 		transition-duration: .01ms !important;
 	}
 }
+
+/* --------------------------------------------------------------------
+   BARRA IN FONDO ALLA PAGINA
+   -------------------------------------------------------------------- */
+
+/*
+ * Le pagine del portfolio non passano dal footer del tema: contatto e
+ * link alle informative stanno qui.
+ *
+ * La barra vive fuori dai contenitori con lo sfondo fotografico, quindi
+ * non ha bisogno di alcun z-index: appoggiata sul fondo pagina non
+ * incontra i livelli dello sfondo, che sono fissi e coprono lo schermo.
+ */
+.fsp-footer {
+	background: var(--fsp-bg);
+	border-top: 1px solid rgba(216, 219, 222, .14);
+}
+
+.fsp-footer__inner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 14px;
+	max-width: 1280px;
+	margin: 0 auto;
+	padding: 20px 24px;
+	font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+	font-size: 11px;
+	letter-spacing: .08em;
+	color: rgba(216, 219, 222, .52);
+}
+
+/*
+ * I link partono dello stesso colore del testo, appena più chiari, e si
+ * sottolineano solo al passaggio: in una riga di servizio la
+ * sottolineatura permanente farebbe più rumore dei link stessi.
+ */
+.fsp-footer a {
+	color: rgba(216, 219, 222, .72);
+	text-decoration: none;
+}
+
+.fsp-footer a:hover,
+.fsp-footer a:focus-visible {
+	color: var(--fsp-silver);
+	text-decoration: underline;
+}
+
+.fsp-footer__sep {
+	opacity: .5;
+}
+
+@media (max-width: 700px) {
+	/* Su schermo stretto le due parti non stanno in riga: si impilano
+	   centrate invece di comprimersi l'una contro l'altra. */
+	.fsp-footer__inner {
+		flex-direction: column;
+		justify-content: center;
+		text-align: center;
+		gap: 10px;
+		padding: 18px 16px;
+	}
+}

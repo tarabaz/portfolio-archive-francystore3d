@@ -278,6 +278,18 @@ testo già scritto: è un limite della piattaforma, non un pezzo mancante. Per
 questo il pulsante copia il codice pezzo negli appunti e apre il profilo. Il
 campo WhatsApp (facoltativo) invece il messaggio precompilato lo supporta.
 
+**La barra in fondo alla pagina sta FUORI dai contenitori con lo sfondo**, subito
+prima di `wp_footer()`. I livelli dello sfondo sono `fixed` e coprono lo schermo:
+appoggiando la barra sul fondo pagina non deve competere con i loro z-index.
+Ogni voce ha un ripiego (privacy → `get_privacy_policy_url()`, cookie → stessa
+della privacy, intestatario → nome del sito) e le voci si accumulano in un array
+unito alla fine, altrimenti una voce mancante lascerebbe il proprio separatore
+orfano. L'anno usa `wp_date()` e non `date()`, così a Capodanno cambia col fuso
+del sito e non con quello di Greenwich.
+
+**La barra non c'entra col banner dei cookie**, che il plugin di consenso inietta
+da `wp_footer()` — chiamato dai template.
+
 **Niente `uninstall.php`.** Disinstallando, pezzi e impostazioni restano nel
 database: cancellare anni di schede compilate a mano per un click di troppo non
 è un rischio che vale la pena correre.
