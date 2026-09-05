@@ -278,7 +278,13 @@ testo già scritto: è un limite della piattaforma, non un pezzo mancante. Per
 questo il pulsante copia il codice pezzo negli appunti e apre il profilo. Il
 campo WhatsApp (facoltativo) invece il messaggio precompilato lo supporta.
 
-**La barra in fondo alla pagina sta FUORI dai contenitori con lo sfondo**, subito
+**La riga in fondo alla pagina è una sola, centrata e in sordina** (10px, colore
+appena staccato dallo sfondo): sono informazioni che devono esserci ma non
+chiedere attenzione. Quando privacy e cookie puntano allo stesso indirizzo — il
+caso normale — si stampa un link solo che le copre entrambe, invece di due link
+identici affiancati.
+
+**La riga sta FUORI dai contenitori con lo sfondo**, subito
 prima di `wp_footer()`. I livelli dello sfondo sono `fixed` e coprono lo schermo:
 appoggiando la barra sul fondo pagina non deve competere con i loro z-index.
 Ogni voce ha un ripiego (privacy → `get_privacy_policy_url()`, cookie → stessa

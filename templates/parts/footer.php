@@ -1,10 +1,10 @@
 <?php
 /**
- * Barra di servizio in fondo alle pagine del plugin.
+ * Riga di servizio in fondo alle pagine del plugin.
  *
  * I template del portfolio sono documenti HTML completi e non passano da
- * get_footer(), quindi il footer del tema non compare: contatto e link
- * alle informative vanno riportati qui.
+ * get_footer(), quindi il footer del tema non compare e i link alle
+ * informative vanno riportati qui.
  *
  * Va richiesta FUORI dai contenitori con lo sfondo fotografico e subito
  * prima di wp_footer(): appoggiata sul fondo pagina non deve competere
@@ -12,8 +12,8 @@
  * schermo.
  *
  * Non ha niente a che vedere con il banner dei cookie: quello lo inietta
- * il plugin di consenso agganciandosi a wp_footer(), che i template
- * chiamano già.
+ * il tema o il plugin di consenso agganciandosi a wp_footer(), che i
+ * template chiamano già.
  *
  * @package FrancyStorePortfolio
  */
@@ -22,7 +22,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-$fsp_footer_email   = FSP_Settings::get_footer_email();
 $fsp_footer_privacy = FSP_Settings::get_footer_privacy_url();
 $fsp_footer_cookie  = FSP_Settings::get_footer_cookie_url();
 $fsp_footer_owner   = FSP_Settings::get_footer_owner();
@@ -35,14 +34,28 @@ $fsp_footer_owner   = FSP_Settings::get_footer_owner();
  */
 $fsp_footer_items = array();
 
-if ( $fsp_footer_privacy ) {
+if ( $fsp_footer_privacy && $fsp_footer_privacy === $fsp_footer_cookie ) {
+	/*
+	 * Stesso indirizzo per le due informative — il caso normale, perché
+	 * di solito stanno nello stesso documento: un link solo che le copre
+	 * entrambe, invece di due link identici uno accanto all'altro.
+	 */
 	$fsp_footer_items[] = '<a href="' . esc_url( $fsp_footer_privacy ) . '">'
-		. esc_html__( 'Privacy Policy', 'francystore-portfolio' ) . '</a>';
-}
+		. esc_html__( 'Privacy Policy', 'francystore-portfolio' )
+		. ' <span class="fsp-footer__sep" aria-hidden="true">&middot;</span> '
+		. esc_html__( 'Cookie Policy', 'francystore-portfolio' )
+		. '</a>';
+} else {
+	// Indirizzi diversi: due link distinti, ognuno al posto suo.
+	if ( $fsp_footer_privacy ) {
+		$fsp_footer_items[] = '<a href="' . esc_url( $fsp_footer_privacy ) . '">'
+			. esc_html__( 'Privacy Policy', 'francystore-portfolio' ) . '</a>';
+	}
 
-if ( $fsp_footer_cookie ) {
-	$fsp_footer_items[] = '<a href="' . esc_url( $fsp_footer_cookie ) . '">'
-		. esc_html__( 'Cookie Policy', 'francystore-portfolio' ) . '</a>';
+	if ( $fsp_footer_cookie ) {
+		$fsp_footer_items[] = '<a href="' . esc_url( $fsp_footer_cookie ) . '">'
+			. esc_html__( 'Cookie Policy', 'francystore-portfolio' ) . '</a>';
+	}
 }
 
 if ( $fsp_footer_owner ) {
@@ -57,22 +70,10 @@ if ( $fsp_footer_owner ) {
 $fsp_footer_items[] = esc_html__( 'Tutti i diritti riservati', 'francystore-portfolio' );
 ?>
 <footer class="fsp-footer">
-	<div class="fsp-footer__inner">
-		<div class="fsp-footer__left">
-			<?php if ( $fsp_footer_email ) : ?>
-				<a href="<?php echo esc_url( 'mailto:' . $fsp_footer_email ); ?>">
-					<?php echo esc_html( $fsp_footer_email ); ?>
-				</a>
-			<?php endif; ?>
-		</div>
-
-		<div class="fsp-footer__right">
-			<?php
-			echo implode( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- ogni voce è già escapata sopra, una per una.
-				' <span class="fsp-footer__sep" aria-hidden="true">&middot;</span> ',
-				$fsp_footer_items
-			);
-			?>
-		</div>
-	</div>
+	<?php
+	echo implode( // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- ogni voce è già escapata sopra, una per una.
+		' <span class="fsp-footer__sep" aria-hidden="true">&middot;</span> ',
+		$fsp_footer_items
+	);
+	?>
 </footer>

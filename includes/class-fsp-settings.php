@@ -57,7 +57,6 @@ class FSP_Settings {
 			'instagram_handle'       => '',
 			'whatsapp_number'        => '',
 			'attribute_suggestions'  => "Alimentazione\nTipo illuminazione\nScala\nBase inclusa\nVerniciatura\nPeso\nPersonalizzabile",
-			'footer_email'           => '',
 			'footer_privacy_url'     => '',
 			'footer_cookie_url'      => '',
 			'footer_owner'           => '',
@@ -319,16 +318,6 @@ class FSP_Settings {
 	}
 
 	/**
-	 * Email di contatto mostrata nella barra in fondo alla pagina.
-	 *
-	 * @return string Vuota se non impostata: in quel caso la parte
-	 *                sinistra della barra resta vuota.
-	 */
-	public static function get_footer_email() {
-		return sanitize_email( (string) self::get( 'footer_email' ) );
-	}
-
-	/**
 	 * Indirizzo dell'informativa privacy.
 	 *
 	 * Se non impostato si ripiega su quella dichiarata in WordPress
@@ -537,7 +526,6 @@ class FSP_Settings {
 		$output['whatsapp_number']       = isset( $input['whatsapp_number'] ) ? preg_replace( '/\D+/', '', (string) $input['whatsapp_number'] ) : '';
 		$output['attribute_suggestions']  = isset( $input['attribute_suggestions'] ) ? sanitize_textarea_field( $input['attribute_suggestions'] ) : '';
 
-		$output['footer_email']       = isset( $input['footer_email'] ) ? sanitize_email( $input['footer_email'] ) : '';
 		$output['footer_privacy_url'] = isset( $input['footer_privacy_url'] ) ? esc_url_raw( $input['footer_privacy_url'] ) : '';
 		$output['footer_cookie_url']  = isset( $input['footer_cookie_url'] ) ? esc_url_raw( $input['footer_cookie_url'] ) : '';
 		$output['footer_owner']       = isset( $input['footer_owner'] ) ? sanitize_text_field( $input['footer_owner'] ) : '';
@@ -874,26 +862,10 @@ class FSP_Settings {
 
 				<h2 class="title"><?php esc_html_e( 'Barra in fondo alla pagina', 'francystore-portfolio' ); ?></h2>
 				<p class="description fsp-settings__intro">
-					<?php esc_html_e( 'Le pagine del portfolio non passano dal footer del tema, quindi i link di servizio vanno indicati qui. Ogni campo lasciato vuoto ha un ripiego: nessuno di questi è obbligatorio.', 'francystore-portfolio' ); ?>
+					<?php esc_html_e( 'Le pagine del portfolio non passano dal footer del tema, quindi i link di servizio vanno indicati qui. Compaiono su una riga sola, centrata e in piccolo. Ogni campo lasciato vuoto ha un ripiego: nessuno di questi è obbligatorio.', 'francystore-portfolio' ); ?>
 				</p>
 
 				<table class="form-table" role="presentation">
-					<tr>
-						<th scope="row">
-							<label for="fsp-footer-email"><?php esc_html_e( 'Email di contatto', 'francystore-portfolio' ); ?></label>
-						</th>
-						<td>
-							<input type="email"
-								id="fsp-footer-email"
-								class="regular-text"
-								name="<?php echo esc_attr( self::OPTION_NAME ); ?>[footer_email]"
-								value="<?php echo esc_attr( (string) $settings['footer_email'] ); ?>"
-								placeholder="info@francystore3d.it">
-							<p class="description">
-								<?php esc_html_e( 'Mostrata a sinistra nella barra, come indirizzo cliccabile. Lasciandola vuota quella parte resta vuota.', 'francystore-portfolio' ); ?>
-							</p>
-						</td>
-					</tr>
 					<tr>
 						<th scope="row">
 							<label for="fsp-footer-privacy"><?php esc_html_e( 'Indirizzo Privacy Policy', 'francystore-portfolio' ); ?></label>

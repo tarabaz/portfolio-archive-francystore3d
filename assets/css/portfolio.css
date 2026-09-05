@@ -1385,64 +1385,54 @@ body.fsp-no-scroll {
 }
 
 /* --------------------------------------------------------------------
-   BARRA IN FONDO ALLA PAGINA
+   RIGA IN FONDO ALLA PAGINA
    -------------------------------------------------------------------- */
 
 /*
- * Le pagine del portfolio non passano dal footer del tema: contatto e
- * link alle informative stanno qui.
+ * Una riga sola, centrata, volutamente in sordina: sono informazioni
+ * che devono esserci ma non chiedere attenzione. Il colore è appena
+ * staccato dallo sfondo, quel tanto che basta per leggerle cercandole.
  *
- * La barra vive fuori dai contenitori con lo sfondo fotografico, quindi
- * non ha bisogno di alcun z-index: appoggiata sul fondo pagina non
- * incontra i livelli dello sfondo, che sono fissi e coprono lo schermo.
+ * Vive fuori dai contenitori con lo sfondo fotografico, quindi non ha
+ * bisogno di alcun z-index: appoggiata sul fondo pagina non incontra i
+ * livelli dello sfondo, che sono fissi e coprono lo schermo.
  */
 .fsp-footer {
+	padding: 26px 20px 30px;
 	background: var(--fsp-bg);
-	border-top: 1px solid rgba(216, 219, 222, .14);
-}
-
-.fsp-footer__inner {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 14px;
-	max-width: 1280px;
-	margin: 0 auto;
-	padding: 20px 24px;
 	font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-	font-size: 11px;
-	letter-spacing: .08em;
-	color: rgba(216, 219, 222, .52);
+	font-size: 10px;
+	line-height: 1.9;
+	letter-spacing: .06em;
+	text-align: center;
+	color: rgba(216, 219, 222, .3);
 }
 
 /*
- * I link partono dello stesso colore del testo, appena più chiari, e si
- * sottolineano solo al passaggio: in una riga di servizio la
- * sottolineatura permanente farebbe più rumore dei link stessi.
+ * I link si distinguono appena, e si accendono solo al passaggio: una
+ * sottolineatura permanente su una riga così piccola farebbe più rumore
+ * del testo stesso.
  */
 .fsp-footer a {
-	color: rgba(216, 219, 222, .72);
+	color: rgba(216, 219, 222, .42);
 	text-decoration: none;
 }
 
 .fsp-footer a:hover,
 .fsp-footer a:focus-visible {
-	color: var(--fsp-silver);
+	color: rgba(216, 219, 222, .8);
 	text-decoration: underline;
 }
 
 .fsp-footer__sep {
-	opacity: .5;
+	opacity: .55;
 }
 
 @media (max-width: 700px) {
-	/* Su schermo stretto le due parti non stanno in riga: si impilano
-	   centrate invece di comprimersi l'una contro l'altra. */
-	.fsp-footer__inner {
-		flex-direction: column;
-		justify-content: center;
-		text-align: center;
-		gap: 10px;
-		padding: 18px 16px;
+	/* Su schermo stretto la riga va a capo da sola: si allarga solo
+	   l'interlinea, perché le righe spezzate non si tocchino. */
+	.fsp-footer {
+		padding: 22px 16px 26px;
+		line-height: 2.1;
 	}
 }
